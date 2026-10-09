@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 static class MeetingLinks
 {
     static readonly Regex LinkRe = new(
-        @"https://(?:teams\.microsoft\.com/l/meetup-join|teams\.live\.com/meet|[\w.-]*zoom\.us/j|meet\.google\.com)/[^\s""<>]+",
+        @"https://(?:teams\.(?:microsoft\.com|cloud\.microsoft)/(?:l/meetup-join|meet)|teams\.live\.com/meet|[\w.-]*zoom\.us/j|meet\.google\.com)/[^\s""<>]+",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     /// <summary>First Teams, Zoom or Google Meet join link in the given texts (location, description, …).</summary>

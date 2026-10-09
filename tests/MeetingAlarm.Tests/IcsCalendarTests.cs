@@ -33,5 +33,6 @@ public class IcsCalendarTests
         var m = Assert.Single(IcsCalendar.Parse(new CalendarConfig { Name = "x" }, ics));
 
         Assert.Equal(DateTime.SpecifyKind(organizerLocal.AddHours(-offset), DateTimeKind.Utc).ToLocalTime(), m.Start);
+        Assert.Equal(m.Start.AddHours(1), m.End);
     }
 }

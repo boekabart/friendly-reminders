@@ -7,7 +7,7 @@ sealed class AlarmContext : ApplicationContext
 {
     Config cfg;
     readonly ContextMenuStrip menu = new();
-    readonly ToolStripMenuItem miUpcoming, miRefresh, miTestPopup, miChatPopup, miAutostart, miSettings, miExit;
+    readonly ToolStripMenuItem miUpcoming, miRefresh, miTestPopup, miChatPopup, miAutostart, miSettings, miExit, miMeetingsHushed, miChatsHushed;
     readonly NotifyIcon tray;
     readonly WinTimer checkTimer;
     readonly WinTimer reloadTimer = new() { Interval = 500 };   // debounce: editors often write several times
@@ -43,7 +43,9 @@ sealed class AlarmContext : ApplicationContext
         miAutostart.CheckedChanged += (_, _) => Autostart.Enabled = miAutostart.Checked;
         miSettings = new ToolStripMenuItem("", null, (_, _) => Config.OpenInNotepad());
         miExit = new ToolStripMenuItem("", null, (_, _) => ExitThread());
-        menu.Items.AddRange([new ToolStripSeparator(), miUpcoming, miRefresh, miTestPopup, miChatPopup, miAutostart, miSettings,
+        miMeetingsHushed = new ToolStripMenuItem("", null, (_, _) => Hush.Meetings.Resume()) { Visible = false };
+        miChatsHushed = new ToolStripMenuItem("", null, (_, _) => Hush.Chats.Resume()) { Visible = false };
+        menu.Items.AddRange([new ToolStripSeparator(), miMeetingsHushed, miChatsHushed, miUpcoming, miRefresh, miTestPopup, miChatPopup, miAutostart, miSettings,
             new ToolStripSeparator(), miExit]);
 
         tray = new NotifyIcon
@@ -62,6 +64,18 @@ sealed class AlarmContext : ApplicationContext
         };
 
         chatPopup.Seen += Seen;
+        Hush.CurrentMeetings = () => meetingsBySource.Values.SelectMany(x => x)
+            .Where(m => m.Start <= DateTime.Now.AddMinutes(cfg.Meetings.MinutesBefore) && m.End > DateTime.Now);
+        Hush.Meetings.Changed += () =>
+        {
+            ShowHushed(miMeetingsHushed, Hush.Meetings, T.HushWhatMeetings);
+            MeetingPopup.HushChanged();
+        };
+        Hush.Chats.Changed += () =>
+        {
+            ShowHushed(miChatsHushed, Hush.Chats, T.HushWhatChats);
+            chatPopup.ShowRows(chatRows);
+        };
         ApplyConfig();
 
         // FileSystemWatcher fires on a thread-pool thread; (re)start the debounce timer via the UI context.
@@ -286,7 +300,7 @@ sealed class AlarmContext : ApplicationContext
         var (name, color) = cfg.ActiveTenants.FirstOrDefault(t => t.Calendar) is { } t ? (t.Name, t.Color)
             : cfg.Calendars.FirstOrDefault() is { } c ? (c.Name, c.Color)
             : ("Test", ColorParser.Default.Name);
-        new MeetingPopup(new Meeting(name, color, T.ExampleMeeting, DateTime.Now.AddSeconds(75),
+        new MeetingPopup(new Meeting(name, color, T.ExampleMeeting, DateTime.Now.AddSeconds(75), DateTime.Now.AddMinutes(30),
             "test-" + Guid.NewGuid(), "https://teams.microsoft.com/l/meetup-join/test"), cfg).ShowPopup();
     }
 
@@ -411,6 +425,12 @@ sealed class AlarmContext : ApplicationContext
         chatRows = [.. chatRows.Where(r => !r.Key.StartsWith("test|")),
             new ChatRow(tenant, "test|example", T.ExampleColleague, 3, DateTimeOffset.Now, null)];
         chatPopup.ShowRows(chatRows);
+    }
+
+    static void ShowHushed(ToolStripMenuItem item, Hush hush, string what)
+    {
+        item.Visible = hush.Active;
+        if (hush.Active) item.Text = hush.Description(what);
     }
 
     void DisplaysChanged(object? sender, EventArgs e)

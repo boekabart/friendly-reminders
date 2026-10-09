@@ -60,6 +60,11 @@ sealed class ChatPopup : PopupBase
     /// <summary>Show the current state. Flashes when a chat was added or a count went up.</summary>
     public void ShowRows(IReadOnlyList<ChatRow> rows)
     {
+        if (Hush.Chats.Active)
+        {
+            Hide();   // previousCounts stays as it was: anything new while hushed flashes when the hush ends
+            return;
+        }
         bool more = rows.Any(r => !previousCounts.TryGetValue(r.Key, out var old) || r.Count > old);
         previousCounts = rows.ToDictionary(r => r.Key, r => r.Count);
 
@@ -103,7 +108,10 @@ sealed class ChatPopup : PopupBase
             inner.Controls.Add(MakeRow(r));
         if (rows.Count > MaxRows)
             inner.Controls.Add(MakeLabel(F(T.MoreChats, rows.Count - MaxRows), 9, width));
-        inner.Controls.Add(MakeButton(T.MarkAllSeen, () => Seen?.Invoke(rows)));
+        var buttons = new FlowLayoutPanel { AutoSize = true, BackColor = Color.Transparent, Margin = Padding.Empty };
+        buttons.Controls.Add(MakeButton(T.MarkAllSeen, () => Seen?.Invoke(rows)));
+        buttons.Controls.Add(MakeHushButton(Hush.Chats));
+        inner.Controls.Add(buttons);
 
         ResumeLayout();
         PerformLayout();

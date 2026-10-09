@@ -8,6 +8,7 @@ public class GraphCalendarTests
         {
           "id": "AAMk-1", "iCalUId": "040000008200E0", "subject": " Stand-up ",
           "start": { "dateTime": "2026-09-26T08:00:00.0000000", "timeZone": "UTC" },
+          "end": { "dateTime": "2026-09-26T08:30:00.0000000", "timeZone": "UTC" },
           "isAllDay": false, "isCancelled": false,
           "responseStatus": { "response": "accepted" },
           "onlineMeeting": { "joinUrl": "https://teams.microsoft.com/l/meetup-join/abc" }
@@ -21,6 +22,7 @@ public class GraphCalendarTests
 
         Assert.Equal("Stand-up", m.Title);
         Assert.Equal(new DateTime(2026, 9, 26, 8, 0, 0, DateTimeKind.Utc).ToLocalTime(), m.Start);
+        Assert.Equal(m.Start.AddMinutes(30), m.End);
         Assert.Equal("https://teams.microsoft.com/l/meetup-join/abc", m.Link);
         Assert.Equal("040000008200E0", m.Uid);
         Assert.Equal(("Pricer", "firebrick"), (m.CalendarName, m.Color));
@@ -47,6 +49,7 @@ public class MeetingLinksTests
     [InlineData("Join: https://meet.google.com/abc-defg-hij now", "https://meet.google.com/abc-defg-hij")]
     [InlineData("https://acme.zoom.us/j/123456?pwd=x", "https://acme.zoom.us/j/123456?pwd=x")]
     [InlineData("<https://teams.microsoft.com/l/meetup-join/19%3a1>", "https://teams.microsoft.com/l/meetup-join/19%3a1")]
+    [InlineData("Join the meeting now<https://teams.microsoft.com/meet/31449843422773?p=kV7bd>", "https://teams.microsoft.com/meet/31449843422773?p=kV7bd")]
     [InlineData("see https://example.com/meet", null)]
     public void Finds_join_links(string text, string? expected) => Assert.Equal(expected, MeetingLinks.Find(null, text));
 

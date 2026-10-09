@@ -87,6 +87,20 @@ abstract class PopupBase : Form
         return b;
     }
 
+    /// <summary>"Hush ▾": a menu with how long to hold back this type of popup and its sound.</summary>
+    protected Button MakeHushButton(Hush hush)
+    {
+        Button b = null!;
+        b = MakeButton(T.HushButton + " ▾", () =>
+        {
+            var menu = new ContextMenuStrip();
+            menu.Items.AddRange(hush.MenuItems());
+            menu.Closed += (_, _) => menu.BeginInvoke(menu.Dispose);   // after the clicked item's handler ran
+            menu.Show(b, new Point(0, b.Height));
+        });
+        return b;
+    }
+
     /// <summary>A normal Button grabs keyboard focus on click, which would activate the popup after all.</summary>
     sealed class NoFocusButton : Button
     {

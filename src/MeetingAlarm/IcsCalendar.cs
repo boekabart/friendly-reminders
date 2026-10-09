@@ -1,7 +1,7 @@
 using Ical.Net;
 using Ical.Net.CalendarComponents;
 
-sealed record Meeting(string CalendarName, string Color, string Title, DateTime Start, string Uid, string? Link, string? Location = null)
+sealed record Meeting(string CalendarName, string Color, string Title, DateTime Start, DateTime End, string Uid, string? Link, string? Location = null)
 {
     /// <summary>Without the calendar name: the same meeting via ICS and via Graph gives one popup.</summary>
     public string Key => $"{Uid}|{Start:O}";
@@ -32,7 +32,9 @@ static class IcsCalendar
                 ?.Value?.ToString();
             var link = MeetingLinks.Find(teamsUrl, ev.Location, ev.Description);
 
-            result.Add(new Meeting(calendar.Name, calendar.Color, title, occ.Period.StartTime.AsUtc.ToLocalTime(), ev.Uid ?? title, link,
+            var start = occ.Period.StartTime.AsUtc.ToLocalTime();
+            var end = occ.Period.EndTime?.AsUtc.ToLocalTime() ?? start + ev.Duration;
+            result.Add(new Meeting(calendar.Name, calendar.Color, title, start, end, ev.Uid ?? title, link,
                 MeetingLinks.CleanLocation(ev.Location)));
         }
         return result.OrderBy(x => x.Start).ToList();

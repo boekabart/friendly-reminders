@@ -55,6 +55,16 @@ sealed record Texts
     public required string MoreChats { get; init; }              // {0} count
     public required string MarkAllSeen { get; init; }
     public required string SeenTooltip { get; init; }
+    public required string HushButton { get; init; }
+    public required string HushCurrentMeeting { get; init; }
+    public required string HushUntilEnd { get; init; }             // {0} title, {1} end time
+    public required string HushMinutes { get; init; }              // {0} minutes
+    public required string HushHour { get; init; }
+    public required string HushScreens { get; init; }
+    public required string MenuHushedUntil { get; init; }          // {0} what, {1} time
+    public required string MenuHushedScreens { get; init; }        // {0} what
+    public required string HushWhatMeetings { get; init; }
+    public required string HushWhatChats { get; init; }
 
     // Startup
     public required string AlreadyRunning { get; init; }
@@ -113,6 +123,16 @@ static class Loc
         MoreChats = "+ {0} more chats",
         MarkAllSeen = "Mark all as seen",
         SeenTooltip = "Seen (until new messages arrive)",
+        HushButton = "Hush",
+        HushCurrentMeeting = "Current meeting",
+        HushUntilEnd = "{0} (until {1:t})",
+        HushMinutes = "{0} minutes",
+        HushHour = "1 hour",
+        HushScreens = "While connected to these screens",
+        MenuHushedUntil = "{0} hushed until {1:t} — click to resume",
+        MenuHushedScreens = "{0} hushed while on these screens — click to resume",
+        HushWhatMeetings = "Meetings",
+        HushWhatChats = "Teams chats",
         AlreadyRunning = "Meeting Alarm is already running (see the system tray).",
         AutostartQuestion = "Start Meeting Alarm automatically with Windows?",
         ConfigCreated = "Settings file created:\n{0}\n\nFill in each job's Tenant (e.g. company.com) and LoginHint (your work email). " +
@@ -174,6 +194,16 @@ static class Loc
         MoreChats = "+ {0} andere chats",
         MarkAllSeen = "Alles gezien",
         SeenTooltip = "Gezien (tot er nieuwe berichten komen)",
+        HushButton = "Stil",
+        HushCurrentMeeting = "Huidige vergadering",
+        HushUntilEnd = "{0} (tot {1:t})",
+        HushMinutes = "{0} minuten",
+        HushHour = "1 uur",
+        HushScreens = "Zolang deze schermen aangesloten zijn",
+        MenuHushedUntil = "{0} stil tot {1:t} — klik om te hervatten",
+        MenuHushedScreens = "{0} stil zolang deze schermen aangesloten zijn — klik om te hervatten",
+        HushWhatMeetings = "Vergaderingen",
+        HushWhatChats = "Teams-chats",
         AlreadyRunning = "Meeting Alarm draait al (zie systeemvak).",
         AutostartQuestion = "Meeting Alarm automatisch starten met Windows?",
         ConfigCreated = "Instellingenbestand aangemaakt:\n{0}\n\nVul per job de Tenant (bv. bedrijf.nl) en LoginHint (je werk-e-mail) in. " +
@@ -227,6 +257,16 @@ static class Loc
         MoreChats = "+ {0} chattar till",
         MarkAllSeen = "Markera alla som sedda",
         SeenTooltip = "Sedd (tills nya meddelanden kommer)",
+        HushButton = "Tyst",
+        HushCurrentMeeting = "Pågående möte",
+        HushUntilEnd = "{0} (till {1:t})",
+        HushMinutes = "{0} minuter",
+        HushHour = "1 timme",
+        HushScreens = "Så länge de här skärmarna är anslutna",
+        MenuHushedUntil = "{0} tysta till {1:t} — klicka för att återuppta",
+        MenuHushedScreens = "{0} tysta så länge de här skärmarna är anslutna — klicka för att återuppta",
+        HushWhatMeetings = "Möten",
+        HushWhatChats = "Teams-chattar",
         AlreadyRunning = "Meeting Alarm körs redan (se meddelandefältet).",
         AutostartQuestion = "Starta Meeting Alarm automatiskt med Windows?",
         ConfigCreated = "Inställningsfilen har skapats:\n{0}\n\nFyll i Tenant (t.ex. foretag.se) och LoginHint (din jobbmejl) för varje jobb. " +

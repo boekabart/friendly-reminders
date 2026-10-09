@@ -102,7 +102,7 @@ sealed class TenantClient
         var until = DateTime.UtcNow.AddDays(2).ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture);
         // ponytail: one page of 100 events covers two days; page further if someone ever has more
         var page = await Get($"me/calendarView?startDateTime={from}&endDateTime={until}&$top=100" +
-                             "&$select=subject,start,isAllDay,isCancelled,responseStatus,onlineMeeting,location,body,iCalUId,id",
+                             "&$select=subject,start,end,isAllDay,isCancelled,responseStatus,onlineMeeting,location,body,iCalUId,id",
             CalendarScopes, ct);
         return page.GetProperty("value").EnumerateArray()
             .Select(e => ToMeeting(e, Tenant.Name, Tenant.Color))
@@ -125,7 +125,8 @@ sealed class TenantClient
         var body = e.TryGetProperty("body", out var b) && b.ValueKind == JsonValueKind.Object ? b.Str("content") : null;
         // Teams fills onlineMeeting; Zoom and Google Meet links live in the location or the invitation text.
         var link = teamsLink ?? MeetingLinks.Find(location, body);
-        return new Meeting(calendarName, color, title, when.LocalDateTime, e.Str("iCalUId") ?? e.Str("id") ?? title, link,
+        var end = e.TryGetProperty("end", out var en) && en.ValueKind == JsonValueKind.Object ? en.Date("dateTime") : null;
+        return new Meeting(calendarName, color, title, when.LocalDateTime, (end ?? when).LocalDateTime, e.Str("iCalUId") ?? e.Str("id") ?? title, link,
             MeetingLinks.CleanLocation(location));
     }
 

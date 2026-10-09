@@ -17,6 +17,7 @@ sealed class MeetingPopup : PopupBase
     readonly Label timeLabel;
     readonly WinTimer tick = new() { Interval = 1000 };
     bool flashOn;
+    bool hushed;   // held back by a hush, shows up when it ends
 
     public MeetingPopup(Meeting meeting, Config cfg)
     {
@@ -60,6 +61,7 @@ sealed class MeetingPopup : PopupBase
             }));
         buttons.Controls.Add(MakeButton(T.Later, Snooze));
         buttons.Controls.Add(MakeButton(T.CloseButton, Close));
+        buttons.Controls.Add(MakeHushButton(Hush.Meetings));
         inner.Controls.Add(buttons);
 
         Controls.Add(inner);
@@ -70,6 +72,15 @@ sealed class MeetingPopup : PopupBase
     {
         _ = Handle;          // force layout so the height is right before positioning
         PerformLayout();
+        Appear();
+    }
+
+    /// <summary>Show (again), unless hushed: then it waits for the hush to end.</summary>
+    void Appear()
+    {
+        if (Expired) { Close(); return; }
+        if (Hush.Meetings.Active) { hushed = true; return; }
+        hushed = false;
         Open.Add(this);
         Reposition();
         Show();
@@ -77,6 +88,25 @@ sealed class MeetingPopup : PopupBase
         UpdateCountdown();
         tick.Start();
     }
+
+    void Disappear()
+    {
+        tick.Stop();
+        Open.Remove(this);
+        Hide();
+        Reposition();
+    }
+
+    /// <summary>Hush started: every popup goes away. Hush ended: they all come back right away.</summary>
+    public static void HushChanged()
+    {
+        foreach (var p in Application.OpenForms.OfType<MeetingPopup>().ToList())
+            if (Hush.Meetings.Active && p.Visible) { p.Disappear(); p.hushed = true; }
+            else if (!Hush.Meetings.Active && p.hushed) p.Appear();
+    }
+
+    bool Expired => cfg.Meetings.AutoCloseAfterMinutes > 0 &&
+                    (DateTime.Now - meeting.Start).TotalMinutes >= cfg.Meetings.AutoCloseAfterMinutes;
 
     void PlaySound()
     {
@@ -102,7 +132,7 @@ sealed class MeetingPopup : PopupBase
         else
         {
             int min = -sec / 60;
-            if (cfg.Meetings.AutoCloseAfterMinutes > 0 && min >= cfg.Meetings.AutoCloseAfterMinutes) { Close(); return; }
+            if (Expired) { Close(); return; }
             timeLabel.Text = min == 0 ? T.StartedNow : F(T.StartedAgo, min);
             flash = true;
         }
@@ -113,22 +143,12 @@ sealed class MeetingPopup : PopupBase
 
     void Snooze()
     {
-        tick.Stop();
-        Open.Remove(this);
-        Hide();
-        Reposition();
-
+        Disappear();
         var wait = new WinTimer { Interval = Math.Max(5, cfg.Meetings.SnoozeSeconds) * 1000 };
         wait.Tick += (_, _) =>
         {
             wait.Dispose();
-            if (IsDisposed) return;
-            Open.Add(this);
-            Reposition();
-            Show();
-            PlaySound();
-            UpdateCountdown();
-            tick.Start();
+            if (!IsDisposed) Appear();
         };
         wait.Start();
     }
