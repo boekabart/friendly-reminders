@@ -23,7 +23,7 @@ sealed record Texts
     public required string StatusNoIcsLink { get; init; }
     public required string StatusCalendarOk { get; init; }       // {2} number of meetings
     public required string StatusOk { get; init; }
-    public required string StatusError { get; init; }            // {2} message
+    public required string StatusError { get; init; }            // {2} message, {3} failures in a row
     public required string StatusSignInRequired { get; init; }
     public required string StatusSignedIn { get; init; }
     public required string StatusAccessNeeded { get; init; }     // {0} name, {1} permission (e.g. Calendars.Read)
@@ -96,7 +96,7 @@ static class Loc
         StatusNoIcsLink = "{0}: no ICS link filled in yet",
         StatusCalendarOk = "{0}: OK at {1:t}, {2} upcoming meeting(s)",
         StatusOk = "{0}: OK at {1:t}",
-        StatusError = "{0}: ERROR at {1:t} - {2}",
+        StatusError = "{0}: ERROR at {1:t} ({3}× in a row) - {2}",
         StatusSignInRequired = "{0}: sign-in required",
         StatusSignedIn = "{0}: signed in, fetching…",
         StatusAccessNeeded = "{0}: permission needed ({1})",
@@ -168,7 +168,7 @@ static class Loc
         StatusNoIcsLink = "{0}: nog geen ICS-link ingevuld",
         StatusCalendarOk = "{0}: OK om {1:t}, {2} komende meeting(s)",
         StatusOk = "{0}: OK om {1:t}",
-        StatusError = "{0}: FOUT om {1:t} - {2}",
+        StatusError = "{0}: FOUT om {1:t} ({3}× achter elkaar) - {2}",
         StatusSignInRequired = "{0}: inloggen vereist",
         StatusSignedIn = "{0}: ingelogd, ophalen…",
         StatusAccessNeeded = "{0}: toestemming nodig ({1})",
@@ -232,7 +232,7 @@ static class Loc
         StatusNoIcsLink = "{0}: ingen ICS-länk angiven än",
         StatusCalendarOk = "{0}: OK kl. {1:t}, {2} kommande möte(n)",
         StatusOk = "{0}: OK kl. {1:t}",
-        StatusError = "{0}: FEL kl. {1:t} - {2}",
+        StatusError = "{0}: FEL kl. {1:t} ({3} gånger i rad) - {2}",
         StatusSignInRequired = "{0}: inloggning krävs",
         StatusSignedIn = "{0}: inloggad, hämtar…",
         StatusAccessNeeded = "{0}: behörighet krävs ({1})",

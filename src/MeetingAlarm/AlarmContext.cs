@@ -18,6 +18,9 @@ sealed class AlarmContext : ApplicationContext
     readonly Dictionary<object, ToolStripMenuItem> statusItems = new();
     readonly Dictionary<TenantConfig, ToolStripMenuItem> signInItems = new();
     readonly HashSet<object> errorReported = new();
+    // Fetches that keep failing, per status key: how many times in a row, and since when.
+    readonly Dictionary<object, (int Count, DateTime Since)> failures = new();
+    static readonly TimeSpan WarnAfter = TimeSpan.FromMinutes(10);
     readonly HashSet<string> shown = new();
     readonly HashSet<string> autoSignInTried = new();
     // Features that got "interaction required" from the silent token call: not signed in, or a permission not granted yet.
@@ -191,11 +194,51 @@ sealed class AlarmContext : ApplicationContext
         cfg = fresh;
         meetingsBySource.Clear();
         errorReported.Clear();
+        failures.Clear();
+        UpdateIcon();
         ApplyConfig();
         tray.ShowBalloonTip(3000, "Meeting Alarm", T.BalloonReloaded, ToolTipIcon.Info);
         _ = RefreshIcsCalendars();
         _ = RefreshGraphCalendars();
         _ = PollChats();
+    }
+
+    // ------------------------------------------------------------ Failed fetches
+
+    /// <summary>
+    /// A fetch failed: the status line counts the failures in a row, the tray icon turns into a warning from the second one,
+    /// and a balloon comes only once it has kept failing for <see cref="WarnAfter"/> while the internet is reachable.
+    /// Offline (or behind a Wi-Fi sign-in page) failing is expected, so then just the icon.
+    /// </summary>
+    async Task Failed(object key, string statusName, Exception e, string balloonText, string balloonName)
+    {
+        var (count, since) = failures.TryGetValue(key, out var f) ? (f.Count + 1, f.Since) : (1, DateTime.Now);
+        failures[key] = (count, since);
+        SetStatus(key, F(T.StatusError, statusName, DateTime.Now, Shorten(e.Message, 70), count));
+        UpdateIcon();
+
+        if (DateTime.Now - since < WarnAfter || errorReported.Contains(key) || !await Online()) return;
+        if (failures.ContainsKey(key) && errorReported.Add(key))   // still failing after the online check
+            tray.ShowBalloonTip(5000, "Meeting Alarm", F(balloonText, balloonName, Shorten(e.Message, 150)), ToolTipIcon.Warning);
+    }
+
+    void Succeeded(object key)
+    {
+        failures.Remove(key);
+        errorReported.Remove(key);
+        UpdateIcon();
+    }
+
+    void UpdateIcon() => tray.Icon = failures.Values.Any(f => f.Count > 1) ? SystemIcons.Warning : SystemIcons.Information;
+
+    /// <summary>
+    /// Really on the internet? Windows' own connectivity test (NCSI): a fixed text over plain http. A Wi-Fi sign-in page
+    /// intercepts or redirects it, so that doesn't count as online.
+    /// </summary>
+    async Task<bool> Online()
+    {
+        try { return await http.GetStringAsync("http://www.msftconnecttest.com/connecttest.txt", stop.Token) == "Microsoft Connect Test"; }
+        catch (Exception) { return false; }
     }
 
     static string Shorten(string s, int max) => s.Length <= max ? s : s[..max] + "…";
@@ -218,14 +261,12 @@ sealed class AlarmContext : ApplicationContext
                 if (!cfg.Calendars.Contains(c)) continue;   // config was reloaded in the meantime
                 meetingsBySource[c] = meetings;   // only replace on success
                 SetStatus(c, F(T.StatusCalendarOk, c.Name, DateTime.Now, meetings.Count));
-                errorReported.Remove(c);
+                Succeeded(c);
             }
             catch (Exception e) when (!stop.IsCancellationRequested)
             {
                 if (!cfg.Calendars.Contains(c)) continue;
-                SetStatus(c, F(T.StatusError, c.Name, DateTime.Now, Shorten(e.Message, 70)));
-                if (errorReported.Add(c))
-                    tray.ShowBalloonTip(5000, "Meeting Alarm", F(T.BalloonCalendarFailed, c.Name, Shorten(e.Message, 150)), ToolTipIcon.Warning);
+                await Failed(c, c.Name, e, T.BalloonCalendarFailed, c.Name);
             }
         }
         Check();
@@ -247,7 +288,7 @@ sealed class AlarmContext : ApplicationContext
                     if (!clients.Contains(client)) continue;   // config was reloaded in the meantime
                     meetingsBySource[t] = meetings;
                     SetStatus(key, F(T.StatusCalendarOk, OutlookName(t), DateTime.Now, meetings.Count));
-                    errorReported.Remove(key);
+                    Succeeded(key);
                     AccessOk(client, Feature.Calendar);
                 }
                 catch (MsalUiRequiredException)
@@ -257,9 +298,7 @@ sealed class AlarmContext : ApplicationContext
                 }
                 catch (Exception e) when (!stop.IsCancellationRequested)
                 {
-                    SetStatus(key, F(T.StatusError, OutlookName(t), DateTime.Now, Shorten(e.Message, 70)));
-                    if (errorReported.Add(key))
-                        tray.ShowBalloonTip(5000, "Meeting Alarm", F(T.BalloonCalendarFailed, OutlookName(t), Shorten(e.Message, 150)), ToolTipIcon.Warning);
+                    await Failed(key, OutlookName(t), e, T.BalloonCalendarFailed, OutlookName(t));
                 }
             }
             Check();
@@ -324,7 +363,7 @@ sealed class AlarmContext : ApplicationContext
                 {
                     all.AddRange(await client.Poll(stop.Token));
                     SetStatus(key, F(T.StatusOk, TeamsName(client.Tenant), DateTime.Now));
-                    errorReported.Remove(key);
+                    Succeeded(key);
                     AccessOk(client, Feature.Chats);
                 }
                 catch (MsalUiRequiredException)
@@ -336,9 +375,7 @@ sealed class AlarmContext : ApplicationContext
                 catch (Exception e) when (!stop.IsCancellationRequested)
                 {
                     all.AddRange(client.Previous);
-                    SetStatus(key, F(T.StatusError, TeamsName(client.Tenant), DateTime.Now, Shorten(e.Message, 70)));
-                    if (errorReported.Add(key))
-                        tray.ShowBalloonTip(5000, "Meeting Alarm", F(T.BalloonChatsFailed, client.Tenant.Name, Shorten(e.Message, 150)), ToolTipIcon.Warning);
+                    await Failed(key, TeamsName(client.Tenant), e, T.BalloonChatsFailed, client.Tenant.Name);
                 }
             }
             chatRows = all;
