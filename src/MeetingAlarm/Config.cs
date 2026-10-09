@@ -44,6 +44,8 @@ sealed class MeetingsConfig
     public int RefreshSeconds { get; set; } = 180;
     /// <summary>How often tenant calendars are read via Graph.</summary>
     public int GraphRefreshSeconds { get; set; } = 30;
+    /// <summary>No popups for meetings with these titles; case-insensitive. "block" exact, "blok*" wildcards, "/regex/". See <see cref="TitleFilter"/>.</summary>
+    public List<string> IgnoreTitles { get; set; } = new();
     /// <summary>Properties this version doesn't know (e.g. "_DisabledCalendars"); kept, and written at the end.</summary>
     [JsonExtensionData] public Dictionary<string, JsonElement>? Unknown { get; set; }
 }
@@ -124,9 +126,22 @@ sealed class Config
     internal static (Config Config, string? Rewritten) Parse(string json)
     {
         var cfg = JsonSerializer.Deserialize<Config>(json, Options) ?? new Config();
+        foreach (var p in cfg.Meetings.IgnoreTitles)
+            try { TitleFilter.ToRegex(p); }
+            catch (ArgumentException e) { throw new FormatException($"IgnoreTitles \"{p}\": {e.Message}"); }
         var current = JsonSerializer.Serialize(cfg, Options);
         var asRead = JsonNode.Parse(json, documentOptions: new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
         return (cfg, JsonNode.DeepEquals(asRead, JsonNode.Parse(current)) ? null : current);
+    }
+
+    /// <summary>Adds an exact-title ignore to config.json (read fresh from disk); the watcher then reloads it.</summary>
+    public static void IgnoreTitle(string title)
+    {
+        var (cfg, _) = Parse(File.ReadAllText(FilePath));
+        var pattern = TitleFilter.Exact(title);
+        if (cfg.Meetings.IgnoreTitles.Contains(pattern, StringComparer.OrdinalIgnoreCase)) return;
+        cfg.Meetings.IgnoreTitles.Add(pattern);
+        Save(cfg);
     }
 
     public static Config? LoadOrCreate()

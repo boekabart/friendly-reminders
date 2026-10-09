@@ -46,11 +46,11 @@ sealed class Hush
         var items = new List<ToolStripItem>();
         var current = CurrentMeetings().DistinctBy(m => m.Key).OrderBy(m => m.End).ToList();
         if (current.Count == 1)
-            items.Add(new ToolStripMenuItem($"{T.HushCurrentMeeting}: {F(T.HushUntilEnd, current[0].Title, current[0].End)}", null,
+            items.Add(new ToolStripMenuItem($"{T.HushCurrentMeeting}: {F(T.HushUntilEnd, current[0].Title.Replace("&", "&&"), current[0].End)}", null,
                 (_, _) => Set(current[0].End, null)));
         else if (current.Count > 1)
             items.Add(new ToolStripMenuItem(T.HushCurrentMeeting, null, current
-                .Select(m => (ToolStripItem)new ToolStripMenuItem(F(T.HushUntilEnd, m.Title, m.End), null, (_, _) => Set(m.End, null)))
+                .Select(m => (ToolStripItem)new ToolStripMenuItem(F(T.HushUntilEnd, m.Title.Replace("&", "&&"), m.End), null, (_, _) => Set(m.End, null)))
                 .ToArray()));
         foreach (var min in new[] { 15, 30, 60 })
             items.Add(new ToolStripMenuItem(min == 60 ? T.HushHour : F(T.HushMinutes, min), null,

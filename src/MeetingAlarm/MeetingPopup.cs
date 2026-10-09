@@ -62,6 +62,7 @@ sealed class MeetingPopup : PopupBase
         buttons.Controls.Add(MakeButton(T.Later, Snooze));
         buttons.Controls.Add(MakeButton(T.CloseButton, Close));
         buttons.Controls.Add(MakeHushButton(Hush.Meetings));
+        buttons.Controls.Add(MakeMenuButton("⋯", () => [new ToolStripMenuItem(F(T.IgnoreTitle, meeting.Title.Replace("&", "&&")), null, (_, _) => IgnoreTitle())]));
         inner.Controls.Add(buttons);
 
         Controls.Add(inner);
@@ -139,6 +140,19 @@ sealed class MeetingPopup : PopupBase
         flashOn = flash && !flashOn;
         inner.BackColor = flashOn ? FlashColor : color;
         KeepOnTop();
+    }
+
+    /// <summary>No more popups for meetings with this title: added to config.json, and every open one for it closes.</summary>
+    void IgnoreTitle()
+    {
+        try { Config.IgnoreTitle(meeting.Title); }
+        catch (Exception e)
+        {
+            MessageBox.Show(e.Message, "Meeting Alarm");
+            return;
+        }
+        foreach (var p in Application.OpenForms.OfType<MeetingPopup>().ToList())
+            if (string.Equals(p.meeting.Title.Trim(), meeting.Title.Trim(), StringComparison.OrdinalIgnoreCase)) p.Close();
     }
 
     void Snooze()

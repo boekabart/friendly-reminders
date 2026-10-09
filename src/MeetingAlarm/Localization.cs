@@ -65,6 +65,7 @@ sealed record Texts
     public required string MenuHushedScreens { get; init; }        // {0} what
     public required string HushWhatMeetings { get; init; }
     public required string HushWhatChats { get; init; }
+    public required string IgnoreTitle { get; init; }              // {0} title
 
     // Startup
     public required string AlreadyRunning { get; init; }
@@ -133,6 +134,7 @@ static class Loc
         MenuHushedScreens = "{0} hushed while on these screens — click to resume",
         HushWhatMeetings = "Meetings",
         HushWhatChats = "Teams chats",
+        IgnoreTitle = "Ignore all meetings named “{0}”",
         AlreadyRunning = "Meeting Alarm is already running (see the system tray).",
         AutostartQuestion = "Start Meeting Alarm automatically with Windows?",
         ConfigCreated = "Settings file created:\n{0}\n\nFill in each job's Tenant (e.g. company.com) and LoginHint (your work email). " +
@@ -204,6 +206,7 @@ static class Loc
         MenuHushedScreens = "{0} stil zolang deze schermen aangesloten zijn — klik om te hervatten",
         HushWhatMeetings = "Vergaderingen",
         HushWhatChats = "Teams-chats",
+        IgnoreTitle = "Alle vergaderingen met de naam “{0}” negeren",
         AlreadyRunning = "Meeting Alarm draait al (zie systeemvak).",
         AutostartQuestion = "Meeting Alarm automatisch starten met Windows?",
         ConfigCreated = "Instellingenbestand aangemaakt:\n{0}\n\nVul per job de Tenant (bv. bedrijf.nl) en LoginHint (je werk-e-mail) in. " +
@@ -267,6 +270,7 @@ static class Loc
         MenuHushedScreens = "{0} tysta så länge de här skärmarna är anslutna — klicka för att återuppta",
         HushWhatMeetings = "Möten",
         HushWhatChats = "Teams-chattar",
+        IgnoreTitle = "Ignorera alla möten med namnet ”{0}”",
         AlreadyRunning = "Meeting Alarm körs redan (se meddelandefältet).",
         AutostartQuestion = "Starta Meeting Alarm automatiskt med Windows?",
         ConfigCreated = "Inställningsfilen har skapats:\n{0}\n\nFyll i Tenant (t.ex. foretag.se) och LoginHint (din jobbmejl) för varje jobb. " +

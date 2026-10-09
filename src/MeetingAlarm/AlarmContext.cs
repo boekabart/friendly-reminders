@@ -64,7 +64,7 @@ sealed class AlarmContext : ApplicationContext
         };
 
         chatPopup.Seen += Seen;
-        Hush.CurrentMeetings = () => meetingsBySource.Values.SelectMany(x => x)
+        Hush.CurrentMeetings = () => Meetings
             .Where(m => m.Start <= DateTime.Now.AddMinutes(cfg.Meetings.MinutesBefore) && m.End > DateTime.Now);
         Hush.Meetings.Changed += () =>
         {
@@ -270,13 +270,17 @@ sealed class AlarmContext : ApplicationContext
         }
     }
 
+    /// <summary>All meetings from every source, without the ignored titles.</summary>
+    IEnumerable<Meeting> Meetings =>
+        meetingsBySource.Values.SelectMany(x => x).Where(m => !TitleFilter.Ignored(m.Title, cfg.Meetings.IgnoreTitles));
+
     void Check()
     {
         // A meeting that already started still gets its popup (app just started, meeting planned late) for as long as the
         // popup would have stayed open anyway; with "never auto-close" that's 15 minutes.
         var lateMinutes = cfg.Meetings.AutoCloseAfterMinutes > 0 ? cfg.Meetings.AutoCloseAfterMinutes : 15;
         var now = DateTime.Now;
-        foreach (var m in meetingsBySource.Values.SelectMany(x => x))
+        foreach (var m in Meetings)
         {
             var sec = (m.Start - now).TotalSeconds;
             if (sec <= cfg.Meetings.MinutesBefore * 60 && sec > -lateMinutes * 60 && shown.Add(m.Key))
@@ -286,7 +290,7 @@ sealed class AlarmContext : ApplicationContext
 
     void ShowUpcoming()
     {
-        var lines = meetingsBySource.Values.SelectMany(x => x)
+        var lines = Meetings
             .Where(m => m.Start > DateTime.Now.AddMinutes(-5))
             .DistinctBy(m => m.Key)
             .OrderBy(m => m.Start).Take(20)

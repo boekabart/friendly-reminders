@@ -117,3 +117,32 @@ public class CenterPlacementTests
         Assert.Equal([new System.Drawing.Point(350, 295), new System.Drawing.Point(350, 405)], p);
     }
 }
+
+public class TitleFilterTests
+{
+    [Theory]
+    [InlineData("Block", "block", true)]
+    [InlineData("  BLOK ", "blok", true)]
+    [InlineData("Blocker", "block", false)]          // plain = whole title
+    [InlineData("Blok: focus", "blok*", true)]
+    [InlineData("X1", "x?", true)]
+    [InlineData("Pricer sync", @"/^pricer\b/", true)]
+    [InlineData("Not pricer", @"/^pricer\b/", false)]
+    [InlineData("Is it done?", "Is it done?", true)]
+    public void Matches_case_insensitive(string title, string pattern, bool ignored) =>
+        Assert.Equal(ignored, TitleFilter.Ignored(title, [pattern]));
+
+    [Theory]
+    [InlineData("Block")]
+    [InlineData("Done? *really*")]
+    [InlineData("/odd/")]
+    public void Exact_matches_only_that_title(string title)
+    {
+        Assert.True(TitleFilter.Ignored(title.ToUpperInvariant(), [TitleFilter.Exact(title)]));
+        Assert.False(TitleFilter.Ignored(title + " x", [TitleFilter.Exact(title)]));
+    }
+
+    [Fact]
+    public void Invalid_regex_is_a_config_error() =>
+        Assert.Throws<FormatException>(() => Config.Parse("""{ "Meetings": { "IgnoreTitles": ["/(/"] } }"""));
+}

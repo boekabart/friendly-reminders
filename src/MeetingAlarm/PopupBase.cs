@@ -88,13 +88,16 @@ abstract class PopupBase : Form
     }
 
     /// <summary>"Hush ▾": a menu with how long to hold back this type of popup and its sound.</summary>
-    protected Button MakeHushButton(Hush hush)
+    protected Button MakeHushButton(Hush hush) => MakeMenuButton(T.HushButton + " ▾", hush.MenuItems);
+
+    /// <summary>A button that opens a menu below it; the items are made when it opens.</summary>
+    protected Button MakeMenuButton(string text, Func<ToolStripItem[]> items)
     {
         Button b = null!;
-        b = MakeButton(T.HushButton + " ▾", () =>
+        b = MakeButton(text, () =>
         {
             var menu = new ContextMenuStrip();
-            menu.Items.AddRange(hush.MenuItems());
+            menu.Items.AddRange(items());
             menu.Closed += (_, _) => menu.BeginInvoke(menu.Dispose);   // after the clicked item's handler ran
             menu.Show(b, new Point(0, b.Height));
         });
