@@ -89,8 +89,27 @@ sealed class Config
         : !string.IsNullOrWhiteSpace(Chats.ClientId) ? Chats.ClientId
         : DefaultClientId;
 
-    public static string FilePath => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MeetingAlarm", "config.json");
+    /// <summary>The config file in use; see <see cref="ConfigLocation"/>. Local until <see cref="LoadOrCreate"/> decided.</summary>
+    public static string FilePath { get; private set; } = Path.Combine(ConfigLocation.LocalDir, ConfigLocation.FileName);
+
+    /// <summary>"OneDrive", "OneDrive - Company" or null for this PC only.</summary>
+    public static string? OneDriveName { get; private set; }
+
+    /// <summary>What happened to the file at startup, for a notification.</summary>
+    public static ConfigMove Moved { get; private set; }
+
+    static void Locate()
+    {
+        var oneDrives = ConfigLocation.OneDriveFolders();
+        try { (FilePath, Moved) = ConfigLocation.Resolve(ConfigLocation.LocalDir, oneDrives); }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return;   // OneDrive folder not usable right now: stay local this run
+        }
+        OneDriveName = oneDrives.Select(d => (d, ConfigLocation.SyncedDir(d)))
+            .FirstOrDefault(x => FilePath.StartsWith(x.Item2, StringComparison.OrdinalIgnoreCase)).d is { } od
+            ? Path.GetFileName(od) : null;
+    }
 
     static readonly JsonSerializerOptions Options = new()
     {
@@ -113,7 +132,8 @@ sealed class Config
         var (cfg, rewritten) = Parse(File.ReadAllText(FilePath));
         if (rewritten is not null)
         {
-            File.Copy(FilePath, Path.Combine(Path.GetDirectoryName(FilePath)!, "config.bak.json"), overwrite: true);
+            Directory.CreateDirectory(ConfigLocation.LocalDir);   // backups stay on this PC, also when the config is in OneDrive
+            File.Copy(FilePath, Path.Combine(ConfigLocation.LocalDir, "config.bak.json"), overwrite: true);
             File.WriteAllText(FilePath, rewritten);   // the watcher reloads once more, finds it current, and stops there
         }
         return cfg;
@@ -146,6 +166,7 @@ sealed class Config
 
     public static Config? LoadOrCreate()
     {
+        Locate();
         if (!File.Exists(FilePath))
         {
             Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);

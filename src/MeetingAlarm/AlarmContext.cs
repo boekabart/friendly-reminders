@@ -104,6 +104,9 @@ sealed class AlarmContext : ApplicationContext
         _ = Loop(RefreshGraphCalendars, () => Math.Max(15, cfg.Meetings.GraphRefreshSeconds));
         _ = Loop(PollChats, () => Math.Max(10, cfg.Chats.PollSeconds));
         if (test) TestPopup();
+        if (Config.Moved != ConfigMove.None)
+            tray.ShowBalloonTip(8000, "Meeting Alarm", F(Config.Moved == ConfigMove.MovedToOneDrive ? T.BalloonConfigMoved : T.BalloonConfigOneDriveWins,
+                Config.FilePath, ConfigLocation.LocalDir), ToolTipIcon.Info);
     }
 
     async Task Loop(Func<Task> work, Func<int> intervalSeconds)
@@ -125,7 +128,7 @@ sealed class AlarmContext : ApplicationContext
         miTestPopup.Text = T.MenuTestPopup;
         miChatPopup.Text = T.MenuChatPopup;
         miAutostart.Text = T.MenuAutostart;
-        miSettings.Text = T.MenuSettings;
+        miSettings.Text = F(T.MenuSettings, Config.OneDriveName ?? T.ThisPc);
         miExit.Text = T.MenuExit;
 
         MeetingPopup.Position = cfg.Meetings.Position;

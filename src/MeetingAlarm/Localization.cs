@@ -13,7 +13,8 @@ sealed record Texts
     public required string MenuTestPopup { get; init; }
     public required string MenuChatPopup { get; init; }
     public required string MenuAutostart { get; init; }
-    public required string MenuSettings { get; init; }
+    public required string MenuSettings { get; init; }            // {0} where: "OneDrive" or "this PC"
+    public required string ThisPc { get; init; }
     public required string MenuExit { get; init; }
     public required string MenuSignInTo { get; init; }           // {0} name
     public required string MenuGrantAccess { get; init; }        // {0} name, {1} features with permission
@@ -31,6 +32,8 @@ sealed record Texts
     // Balloon notifications
     public required string BalloonConfigError { get; init; }     // {0} message
     public required string BalloonReloaded { get; init; }
+    public required string BalloonConfigMoved { get; init; }      // {0} new path, {1} local folder
+    public required string BalloonConfigOneDriveWins { get; init; }  // {0} OneDrive path, {1} local folder
     public required string BalloonCalendarFailed { get; init; }  // {0} name, {1} message
     public required string BalloonChatsFailed { get; init; }     // {0} name, {1} message
     public required string BalloonSignInAgain { get; init; }     // {0} name
@@ -88,7 +91,8 @@ static class Loc
         MenuTestPopup = "Show test popup",
         MenuChatPopup = "Show chat popup",
         MenuAutostart = "Start with Windows",
-        MenuSettings = "Open settings",
+        MenuSettings = "Open settings ({0})",
+        ThisPc = "this PC",
         MenuExit = "Exit",
         MenuSignInTo = "Sign in to {0}…",
         MenuGrantAccess = "{0}: allow access to {1}…",
@@ -102,6 +106,8 @@ static class Loc
         StatusAccessNeeded = "{0}: permission needed ({1})",
         BalloonConfigError = "Error in config.json, keeping the previous settings:\n{0}",
         BalloonReloaded = "Settings reloaded.",
+        BalloonConfigMoved = "Settings moved to OneDrive, so they sync to your other PCs:\n{0}\nThe old file is config.moved.json in {1}.",
+        BalloonConfigOneDriveWins = "Using the settings from OneDrive:\n{0}\nThis PC's own settings were kept as config.local-backup.json in {1}.",
         BalloonCalendarFailed = "Fetching calendar '{0}' failed:\n{1}",
         BalloonChatsFailed = "Fetching Teams chats '{0}' failed:\n{1}",
         BalloonSignInAgain = "{0}: please sign in (via the tray icon's menu).",
@@ -160,7 +166,8 @@ static class Loc
         MenuTestPopup = "Test-popup tonen",
         MenuChatPopup = "Chat-popup tonen",
         MenuAutostart = "Start met Windows",
-        MenuSettings = "Instellingen openen",
+        MenuSettings = "Instellingen openen ({0})",
+        ThisPc = "deze pc",
         MenuExit = "Afsluiten",
         MenuSignInTo = "Inloggen bij {0}…",
         MenuGrantAccess = "{0}: toegang geven tot {1}…",
@@ -174,6 +181,8 @@ static class Loc
         StatusAccessNeeded = "{0}: toestemming nodig ({1})",
         BalloonConfigError = "Fout in config.json, oude instellingen blijven actief:\n{0}",
         BalloonReloaded = "Instellingen opnieuw geladen.",
+        BalloonConfigMoved = "Instellingen verplaatst naar OneDrive, zodat ze naar je andere pc's synchroniseren:\n{0}\nHet oude bestand is config.moved.json in {1}.",
+        BalloonConfigOneDriveWins = "De instellingen uit OneDrive worden gebruikt:\n{0}\nDe eigen instellingen van deze pc staan nog als config.local-backup.json in {1}.",
         BalloonCalendarFailed = "Agenda '{0}' ophalen mislukt:\n{1}",
         BalloonChatsFailed = "Teams-chats '{0}' ophalen mislukt:\n{1}",
         BalloonSignInAgain = "{0}: inloggen vereist (via het menu van het icoon).",
@@ -224,7 +233,8 @@ static class Loc
         MenuTestPopup = "Visa testpopup",
         MenuChatPopup = "Visa chattpopup",
         MenuAutostart = "Starta med Windows",
-        MenuSettings = "Öppna inställningar",
+        MenuSettings = "Öppna inställningar ({0})",
+        ThisPc = "den här datorn",
         MenuExit = "Avsluta",
         MenuSignInTo = "Logga in på {0}…",
         MenuGrantAccess = "{0}: ge åtkomst till {1}…",
@@ -238,6 +248,8 @@ static class Loc
         StatusAccessNeeded = "{0}: behörighet krävs ({1})",
         BalloonConfigError = "Fel i config.json, de tidigare inställningarna behålls:\n{0}",
         BalloonReloaded = "Inställningarna har lästs in igen.",
+        BalloonConfigMoved = "Inställningarna har flyttats till OneDrive och synkas till dina andra datorer:\n{0}\nDen gamla filen är config.moved.json i {1}.",
+        BalloonConfigOneDriveWins = "Inställningarna från OneDrive används:\n{0}\nDen här datorns egna inställningar finns kvar som config.local-backup.json i {1}.",
         BalloonCalendarFailed = "Det gick inte att hämta kalendern '{0}':\n{1}",
         BalloonChatsFailed = "Det gick inte att hämta Teams-chattarna '{0}':\n{1}",
         BalloonSignInAgain = "{0}: logga in (via ikonens meny).",

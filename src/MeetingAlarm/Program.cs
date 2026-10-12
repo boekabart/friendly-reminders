@@ -5,7 +5,8 @@
 // Run:       dotnet run --project src/MeetingAlarm
 // Test:      dotnet run --project src/MeetingAlarm -- --test
 // Build exe: dotnet publish src/MeetingAlarm -o publish
-// Settings:  %APPDATA%\MeetingAlarm\config.json (created on first start, changes are picked up automatically)
+// Settings:  OneDrive\Apps\FriendlyReminders\config.json (personal OneDrive first), else %APPDATA%\MeetingAlarm\config.json;
+//            created on first start, changes are picked up automatically. See ConfigLocation.
 
 static class Program
 {
