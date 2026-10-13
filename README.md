@@ -12,7 +12,7 @@ The popups are always on top, but never take focus: they don't interrupt your ty
 
 ## Install
 
-Download `HTI.FriendlyReminders-win-Setup.exe` from the [latest release](https://github.com/boekabart/meeting-alarm/releases/latest)
+Download `HTI.FriendlyReminders-win-Setup.exe` from the [latest release](https://github.com/boekabart/friendly-reminders/releases/latest)
 and run it. It installs for you only (`%LOCALAPPDATA%\HTI.FriendlyReminders`, no admin rights, nothing else to
 install), adds a Start menu shortcut and starts the app. Uninstall via Windows' *Installed apps*; your settings stay.
 

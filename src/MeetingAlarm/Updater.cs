@@ -9,7 +9,7 @@ using Velopack.Sources;
 /// </summary>
 static class Updater
 {
-    const string Repo = "https://github.com/boekabart/meeting-alarm";
+    const string Repo = "https://github.com/boekabart/friendly-reminders";
 
     /// <summary>git describe of the build: "0.9.0" for a release, "0.9.0-3-gabc1234" after it. See Directory.Build.targets.</summary>
     public static string Version { get; } =
