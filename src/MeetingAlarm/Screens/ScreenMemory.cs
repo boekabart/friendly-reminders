@@ -37,6 +37,7 @@ static class ScreenMemory
     {
         WriteIndented = true,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,   // keys stay readable ("&", "+"); never goes into HTML
     };
 
     public static Dictionary<string, SetupMemory> Setups { get; } = Load();
