@@ -8,6 +8,11 @@ abstract class PopupBase : Form
 {
     [DllImport("user32.dll")]
     static extern bool SetWindowPos(IntPtr hWnd, IntPtr after, int x, int y, int cx, int cy, uint flags);
+    [DllImport("user32.dll")] static extern short GetAsyncKeyState(int key);
+    [DllImport("user32.dll")] static extern IntPtr WindowFromPoint(Point p);
+    [DllImport("user32.dll")] static extern IntPtr GetAncestor(IntPtr hWnd, uint flags);
+    const int VK_LBUTTON = 1, VK_RBUTTON = 2, VK_MBUTTON = 4;
+    const uint GA_ROOT = 2;
     static readonly IntPtr HWND_TOPMOST = new(-1);
     const uint SWP_NOSIZE = 0x1, SWP_NOMOVE = 0x2, SWP_NOACTIVATE = 0x10;
     const int WS_EX_TOPMOST = 0x8, WS_EX_TOOLWINDOW = 0x80, WS_EX_NOACTIVATE = 0x08000000;
@@ -117,10 +122,29 @@ abstract class PopupBase : Form
         {
             var menu = new ContextMenuStrip();
             menu.Items.AddRange(items().ToArray());
-            menu.Closed += (_, _) => menu.BeginInvoke(menu.Dispose);   // after the clicked item's handler ran
+            // The popup never takes focus, so Windows doesn't close the menu on a click elsewhere: watch for that
+            // ourselves, and for the popup going away underneath it (e.g. the chat was read in Teams).
+            var watch = new System.Windows.Forms.Timer { Interval = 50 };
+            watch.Tick += (_, _) =>
+            {
+                if (b.IsDisposed || !b.Visible || ClickedOutsideMenus()) menu.Close();
+            };
+            menu.Closed += (_, _) =>
+            {
+                watch.Dispose();
+                menu.BeginInvoke(menu.Dispose);   // after the clicked item's handler ran
+            };
             menu.Show(b, new Point(0, b.Height));
+            watch.Start();
         });
         return b;
+    }
+
+    /// <summary>A mouse button is down somewhere that isn't one of our open menus (or submenus).</summary>
+    static bool ClickedOutsideMenus()
+    {
+        if (!new[] { VK_LBUTTON, VK_RBUTTON, VK_MBUTTON }.Any(k => GetAsyncKeyState(k) < 0)) return false;   // high bit = down
+        return Control.FromHandle(GetAncestor(WindowFromPoint(Cursor.Position), GA_ROOT)) is not ToolStripDropDown;
     }
 
     /// <summary>A normal Button grabs keyboard focus on click, which would activate the popup after all.</summary>
