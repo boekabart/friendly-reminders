@@ -8,7 +8,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <PublishSingleFile>true</PublishSingleFile>
-    <SelfContained>false</SelfContained>
+    <!-- Self-contained: the installer needs no .NET runtime (and so no admin rights) -->
+    <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <!-- Bundle the WAM broker (msalruntime.dll) into the single-file exe -->
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
@@ -23,6 +24,7 @@
     <PackageReference Include="Microsoft.Identity.Client" Version="4.90.0" />
     <PackageReference Include="Microsoft.Identity.Client.Broker" Version="4.90.0" />
     <PackageReference Include="Microsoft.Identity.Client.Extensions.Msal" Version="4.90.0" />
+    <PackageReference Include="Velopack" Version="1.2.161" />
   </ItemGroup>
 
   <ItemGroup>

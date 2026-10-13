@@ -1,0 +1,71 @@
+name: Build release
+
+# Builds the installer for a version tag (X.Y.Z only) and publishes it as a GitHub release. Installed copies update
+# from there. Runs on a tag pushed by hand, and from release.yml (the Release buttons).
+
+on:
+  push:
+    tags: ['[0-9]+.[0-9]+.[0-9]+']
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+
+jobs:
+  build:
+    name: Build and publish the installer
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+      REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      # The tags too: the version is git describe of the nearest tag (Directory.Build.targets).
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Test
+        run: dotnet test -c Release
+
+      - name: Check the version
+        shell: bash
+        run: |
+          version=$(git describe --tags --match "[0-9]*")
+          [ "$version" = "$TAG" ] || { echo "::error::git describe says $version, expected $TAG"; exit 1; }
+
+      - name: Publish
+        run: dotnet publish src/MeetingAlarm -c Release -o pub
+
+      - name: Release notes
+        shell: bash
+        run: |
+          previous=$(git describe --tags --abbrev=0 --match "[0-9]*" "$TAG^" 2>/dev/null || true)
+          git log --no-merges --format='- %s' "${previous:+$previous..}$TAG" > notes.md
+
+      - name: Install vpk
+        run: dotnet tool install -g vpk --version 1.2.161
+
+      # The previous release, to make a delta package from. The first release has none; without it there's just no delta.
+      - name: Download the previous release
+        continue-on-error: true
+        run: vpk download github --repoUrl $env:REPO_URL --token $env:GH_TOKEN -o releases
+
+      - name: Pack
+        run: >-
+          vpk pack --packId HTI.FriendlyReminders --packVersion $env:TAG --packDir pub --mainExe FriendlyReminders.exe
+          --packTitle FriendlyReminders --packAuthors "High Tech Innovators" --shortcuts StartMenuRoot
+          --releaseNotes notes.md -o releases
+
+      - name: Upload the release
+        run: >-
+          vpk upload github --repoUrl $env:REPO_URL --token $env:GH_TOKEN -o releases
+          --publish --tag $env:TAG --releaseName "FriendlyReminders $env:TAG"

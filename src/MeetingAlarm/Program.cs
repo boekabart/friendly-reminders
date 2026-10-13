@@ -4,15 +4,22 @@
 //
 // Run:       dotnet run --project src/MeetingAlarm
 // Test:      dotnet run --project src/MeetingAlarm -- --test
-// Build exe: dotnet publish src/MeetingAlarm -o publish
+// Build exe: dotnet publish src/MeetingAlarm -o publish (releases: the Release buttons in GitHub Actions, see README)
 // Settings:  OneDrive\Apps\FriendlyReminders\config.json (personal OneDrive first), else %APPDATA%\FriendlyReminders\config.json;
 //            created on first start, changes are picked up automatically. See ConfigLocation.
+
+using Velopack;
 
 static class Program
 {
     [STAThread]
     static void Main(string[] args)
     {
+        // First: Setup.exe and updates start the exe with hook arguments (handled and exited here), and a downloaded
+        // update is installed now, before this version gets going.
+        VelopackApp.Build()
+            .OnBeforeUninstallFastCallback(_ => Autostart.Enabled = false)
+            .Run();
         UseLanguage(null);   // Windows display language until the config is loaded
         using var mutex = new Mutex(true, "MeetingAlarm_SingleInstance", out bool first);
         if (!first)
@@ -21,6 +28,8 @@ static class Program
             return;
         }
         AppFolders.MoveOldFolders();   // before anything reads or writes them; only here, with the single-instance lock held
+        // Autostart from an older copy (e.g. a hand-copied exe): point it at the installed one.
+        if (Updater.Installed && Autostart.Enabled) Autostart.Enabled = true;
         Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);

@@ -7,7 +7,8 @@ sealed class AlarmContext : ApplicationContext
 {
     Config cfg;
     readonly ContextMenuStrip menu = new();
-    readonly ToolStripMenuItem miUpcoming, miRefresh, miTestPopup, miChatPopup, miAutostart, miSettings, miExit, miScreenSetups;
+    readonly ToolStripMenuItem miUpcoming, miRefresh, miTestPopup, miChatPopup, miAutostart, miSettings, miExit, miScreenSetups, miUpdate;
+    Velopack.VelopackAsset? update;   // downloaded, installed at the next start or via miUpdate
     readonly Dictionary<Quiet, ToolStripMenuItem> quietItems;
     readonly NotifyIcon tray;
     readonly WinTimer checkTimer;
@@ -47,18 +48,20 @@ sealed class AlarmContext : ApplicationContext
         miAutostart.CheckedChanged += (_, _) => Autostart.Enabled = miAutostart.Checked;
         miSettings = new ToolStripMenuItem("", null, (_, _) => Config.OpenInNotepad());
         miExit = new ToolStripMenuItem("", null, (_, _) => ExitThread());
+        miUpdate = new ToolStripMenuItem("", null, (_, _) => RestartToUpdate()) { Visible = false };
         miScreenSetups = new ToolStripMenuItem("");
         miScreenSetups.DropDownItems.Add("…");   // so it shows as a submenu; filled when it opens
         miScreenSetups.DropDownOpening += (_, _) => BuildScreenSetups();
         quietItems = Quiet.All.ToDictionary(q => q, q => new ToolStripMenuItem("", null, (_, _) => q.Resume()) { Visible = false });
         menu.Items.AddRange([new ToolStripSeparator(), .. quietItems.Values, miUpcoming, miRefresh, miTestPopup, miChatPopup, miScreenSetups,
-            miAutostart, miSettings, new ToolStripSeparator(), miExit]);
+            miAutostart, miSettings, new ToolStripSeparator(), new ToolStripMenuItem($"Meeting Alarm {Updater.Version}") { Enabled = false },
+            miUpdate, miExit]);
         MenuRenderer.Use(menu);
 
         tray = new NotifyIcon
         {
             Icon = SystemIcons.Information,
-            Text = "Meeting Alarm",
+            Text = $"Meeting Alarm {Updater.Version}",
             ContextMenuStrip = menu,
             Visible = true,
         };
@@ -111,6 +114,7 @@ sealed class AlarmContext : ApplicationContext
         _ = Loop(RefreshIcsCalendars, () => Math.Max(30, cfg.Meetings.RefreshSeconds));
         _ = Loop(RefreshGraphCalendars, () => Math.Max(15, cfg.Meetings.GraphRefreshSeconds));
         _ = Loop(PollChats, () => Math.Max(10, cfg.Chats.PollSeconds));
+        _ = Loop(CheckForUpdate, () => 6 * 3600);
         if (test) TestPopup();
         if (Config.Moved != ConfigMove.None)
             tray.ShowBalloonTip(8000, "Meeting Alarm", F(Config.Moved == ConfigMove.MovedToOneDrive ? T.BalloonConfigMoved : T.BalloonConfigOneDriveWins,
@@ -139,6 +143,7 @@ sealed class AlarmContext : ApplicationContext
         miSettings.Text = F(T.MenuSettings, Config.OneDriveName ?? T.ThisPc);
         miScreenSetups.Text = T.MenuScreenSetups;
         miExit.Text = T.MenuExit;
+        if (update is not null) miUpdate.Text = F(T.MenuUpdate, update.Version);
 
         MeetingPopup.Position = cfg.Meetings.Position;
         MeetingPopup.Reposition();
@@ -522,6 +527,22 @@ sealed class AlarmContext : ApplicationContext
         ScreenMemory.Seen(ScreenSetup.Current);
         MeetingPopup.Reposition();
         chatPopup.Reposition();
+    }
+
+    async Task CheckForUpdate()
+    {
+        var found = await Updater.Download();
+        if (found is null || found.Version == update?.Version) return;
+        update = found;
+        miUpdate.Text = F(T.MenuUpdate, found.Version);
+        miUpdate.Visible = true;
+        tray.ShowBalloonTip(8000, "Meeting Alarm", F(T.BalloonUpdateReady, found.Version), ToolTipIcon.Info);
+    }
+
+    void RestartToUpdate()
+    {
+        tray.Visible = false;   // the process ends inside Restart; don't leave a dead icon behind
+        Updater.Restart(update!);
     }
 
     protected override void ExitThreadCore()

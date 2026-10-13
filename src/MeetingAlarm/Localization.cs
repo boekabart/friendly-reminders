@@ -18,6 +18,7 @@ sealed record Texts
     public required string MenuExit { get; init; }
     public required string MenuSignInTo { get; init; }           // {0} name
     public required string MenuGrantAccess { get; init; }        // {0} name, {1} features with permission
+    public required string MenuUpdate { get; init; }             // {0} new version
 
     // Status lines in the menu: {0} name, {1} time
     public required string StatusNotFetched { get; init; }
@@ -39,6 +40,7 @@ sealed record Texts
     public required string BalloonSignInAgain { get; init; }     // {0} name
     public required string BalloonSignInFailed { get; init; }    // {0} name, {1} message
     public required string BalloonAccessNeeded { get; init; }    // {0} name, {1} feature with permission
+    public required string BalloonUpdateReady { get; init; }     // {0} new version
     public required string FeatureCalendar { get; init; }
     public required string FeatureChats { get; init; }
 
@@ -115,6 +117,7 @@ static class Loc
         MenuExit = "Exit",
         MenuSignInTo = "Sign in to {0}…",
         MenuGrantAccess = "{0}: allow access to {1}…",
+        MenuUpdate = "Restart to update to {0}",
         StatusNotFetched = "{0}: not fetched yet",
         StatusNoIcsLink = "{0}: no ICS link filled in yet",
         StatusCalendarOk = "{0}: OK at {1:t}, {2} upcoming meeting(s)",
@@ -132,6 +135,7 @@ static class Loc
         BalloonSignInAgain = "{0}: please sign in (via the tray icon's menu).",
         BalloonSignInFailed = "Signing in to '{0}' failed:\n{1}",
         BalloonAccessNeeded = "{0}: Meeting Alarm needs access to {1}. Allow it via the tray icon's menu.",
+        BalloonUpdateReady = "Version {0} is ready. It's installed the next time the app starts, or right away via the tray icon's menu.",
         FeatureCalendar = "your calendar",
         FeatureChats = "your Teams chats",
         UpcomingTitle = "Upcoming meetings",
@@ -209,6 +213,7 @@ static class Loc
         MenuExit = "Afsluiten",
         MenuSignInTo = "Inloggen bij {0}…",
         MenuGrantAccess = "{0}: toegang geven tot {1}…",
+        MenuUpdate = "Herstarten en bijwerken naar {0}",
         StatusNotFetched = "{0}: nog niet opgehaald",
         StatusNoIcsLink = "{0}: nog geen ICS-link ingevuld",
         StatusCalendarOk = "{0}: OK om {1:t}, {2} komende meeting(s)",
@@ -226,6 +231,7 @@ static class Loc
         BalloonSignInAgain = "{0}: inloggen vereist (via het menu van het icoon).",
         BalloonSignInFailed = "Inloggen bij '{0}' mislukt:\n{1}",
         BalloonAccessNeeded = "{0}: Meeting Alarm heeft toegang nodig tot {1}. Geef die via het menu van het icoon.",
+        BalloonUpdateReady = "Versie {0} staat klaar. Die wordt geïnstalleerd bij de volgende start van de app, of meteen via het menu van het icoon.",
         FeatureCalendar = "je agenda",
         FeatureChats = "je Teams-chats",
         UpcomingTitle = "Komende meetings",
@@ -295,6 +301,7 @@ static class Loc
         MenuExit = "Avsluta",
         MenuSignInTo = "Logga in på {0}…",
         MenuGrantAccess = "{0}: ge åtkomst till {1}…",
+        MenuUpdate = "Starta om och uppdatera till {0}",
         StatusNotFetched = "{0}: inte hämtad än",
         StatusNoIcsLink = "{0}: ingen ICS-länk angiven än",
         StatusCalendarOk = "{0}: OK kl. {1:t}, {2} kommande möte(n)",
@@ -312,6 +319,7 @@ static class Loc
         BalloonSignInAgain = "{0}: logga in (via ikonens meny).",
         BalloonSignInFailed = "Inloggningen på '{0}' misslyckades:\n{1}",
         BalloonAccessNeeded = "{0}: Meeting Alarm behöver åtkomst till {1}. Tillåt det via ikonens meny.",
+        BalloonUpdateReady = "Version {0} är klar. Den installeras nästa gång appen startar, eller direkt via ikonens meny.",
         FeatureCalendar = "din kalender",
         FeatureChats = "dina Teams-chattar",
         UpcomingTitle = "Kommande möten",

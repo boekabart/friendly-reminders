@@ -6,8 +6,8 @@ decisions behind the two bigger features are in [TEAMS-ALARM-SPEC.md](TEAMS-ALAR
 
 ## In one paragraph
 
-A single-process WinForms tray app (.NET 10, `net10.0-windows`, framework-dependent single-file exe
-`FriendlyReminders.exe`). There's no main window. An `ApplicationContext` (`AlarmContext`) owns the tray icon, runs
+A single-process WinForms tray app (.NET 10, `net10.0-windows`, self-contained single-file exe
+`FriendlyReminders.exe`, installed and updated by Velopack). There's no main window. An `ApplicationContext` (`AlarmContext`) owns the tray icon, runs
 three polling loops (ICS calendars, Microsoft 365 calendars, Teams chats) and a 10-second check that opens meeting
 popups. Everything runs on the **UI thread**: the loops are `async` and their continuations come back to the UI
 thread via the WinForms `SynchronizationContext`, so there is no locking. Only ICS parsing runs on the thread pool
@@ -24,21 +24,46 @@ tests/MeetingAlarm.Tests/    xUnit tests for the logic (no UI); InternalsVisible
 * **Packages:**
   * Ical.Net: ICS parsing.
   * Microsoft.Identity.Client (+ `.Broker` for WAM, `.Extensions.Msal` for the encrypted token cache).
+  * Velopack: installer and updates from the GitHub releases.
 * **Build and run:** `dotnet test`; `dotnet publish src/MeetingAlarm -c Release -o <dir>`.
+* **Version:** `Directory.Build.targets` sets `InformationalVersion` to `git describe --tags --match "[0-9]*"`
+  (`Updater.Version`).
+
+## Install, updates and releases
+
+* **Installer:** Velopack, package id `HTI.FriendlyReminders`, per user in `%LOCALAPPDATA%\HTI.FriendlyReminders`
+  (`current\FriendlyReminders.exe`). Self-contained, so there's no runtime to install and no admin rights needed.
+  That folder is separate from the data folder `%LOCALAPPDATA%\FriendlyReminders`: an uninstall removes the
+  installation, not the data.
+* **Hooks:** `VelopackApp.Build().Run()` is the first thing in `Main`. It handles the installer's hook arguments
+  (and exits), and installs a downloaded update before this version gets going. Before an uninstall it removes the
+  autostart entry.
+* **Updates (`Updater`):** only when installed (`UpdateManager.IsInstalled`). `AlarmContext.CheckForUpdate` runs at
+  startup and every 6 hours: check the GitHub releases, download, then a balloon and *Restart to update to …* in the
+  tray menu (`ApplyUpdatesAndRestart`). Errors are ignored until the next check.
+* **Releases:** `.github/workflows/`:
+  * `release-{patch,minor,major}.yml`: the buttons, calling `release.yml`.
+  * `release.yml`: tags the next version (an annotated tag on `main` or a given commit) and calls `build.yml`. A
+    tag pushed with `GITHUB_TOKEN` starts no workflows, hence the direct call.
+  * `build.yml`: for `X.Y.Z` tags only (pushed by hand, or called): test, publish, `vpk pack` (with a delta from
+    the previous release), `vpk upload github`. Release notes are the commit subjects since the previous tag.
 
 ## Startup
 
 `Program.Main`:
 
-1. Uses the Windows display language until the config is loaded (`UseLanguage(null)`).
-2. Takes a named mutex (`MeetingAlarm_SingleInstance`). A second instance shows a message and exits.
-3. `AppFolders.MoveOldFolders()` renames `MeetingAlarm` data folders from older versions to `FriendlyReminders`.
+1. `VelopackApp.Build().Run()`: installer hooks and pending updates (see [Install, updates and releases](#install-updates-and-releases)).
+2. Uses the Windows display language until the config is loaded (`UseLanguage(null)`).
+3. Takes a named mutex (`MeetingAlarm_SingleInstance`). A second instance shows a message and exits.
+4. `AppFolders.MoveOldFolders()` renames `MeetingAlarm` data folders from older versions to `FriendlyReminders`.
    This happens **only here**, under the mutex. No other code moves or creates folders as a side effect of being
    touched; a test run once did exactly that to real data.
-4. `Config.LoadOrCreate()`:
+5. When installed and *Start with Windows* is on, the Run entry is rewritten to this exe (a hand-copied exe
+   from before the installer moves over).
+6. `Config.LoadOrCreate()`:
    * `ConfigLocation.Resolve` decides where `config.json` lives (OneDrive or local, moving it if needed).
    * On a first run it creates the file, asks about autostart and opens Notepad.
-5. `Application.Run(new AlarmContext(config, test))`.
+7. `Application.Run(new AlarmContext(config, test))`.
 
 ## Source map
 
@@ -54,7 +79,7 @@ tests/MeetingAlarm.Tests/    xUnit tests for the logic (no UI); InternalsVisible
 | Quiet | `Quiet.cs` | Mute (meetings, chats) and Snooze (chats). |
 | Screens | `Screens/ScreenSetup.cs`, `Screens/ScreenMemory.cs` | Identify the current monitor setup; remember choices per setup. |
 | Texts | `Localization.cs` | All visible strings in en-US/en-GB, nl-NL, sv-SE. |
-| Misc | `Autostart.cs` | The `HKCU\…\Run` entry. |
+| Misc | `Autostart.cs`, `Updater.cs`, `MenuRenderer.cs` | The `HKCU\…\Run` entry; updates; the menus' look. |
 
 ## Data flow: meetings
 

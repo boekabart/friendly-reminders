@@ -1,0 +1,66 @@
+name: Release
+
+# The three Release buttons in the Actions tab all land here: tag the next version and build it.
+# By hand it's the same: git tag -a 1.2.3 -m "FriendlyReminders 1.2.3" && git push origin 1.2.3 (build.yml runs on the tag).
+
+on:
+  workflow_call:
+    inputs:
+      level:
+        description: Which part of the version to raise (major, minor, patch)
+        required: true
+        type: string
+      commit:
+        description: What to release. Empty means the tip of main.
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  tag:
+    name: Tag the next version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.tag.outputs.version }}
+    steps:
+      # The whole history and all tags: the next version comes from the highest X.Y.Z tag.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Tag
+        id: tag
+        env:
+          LEVEL: ${{ inputs.level }}
+          COMMIT: ${{ inputs.commit }}
+        run: |
+          set -euo pipefail
+          target=$(git rev-parse "${COMMIT:-origin/main}^{commit}")
+          git merge-base --is-ancestor "$target" origin/main || { echo "::error::$target is not on main"; exit 1; }
+          latest=$(git tag -l | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1 || true)
+          if [ -n "$latest" ] && [ "$(git rev-list --count "$latest..$target")" = 0 ]; then
+            echo "::error::Nothing new since $latest"; exit 1
+          fi
+          IFS=. read -r major minor patch <<< "${latest:-0.0.0}"
+          case "$LEVEL" in
+            major) version="$((major + 1)).0.0" ;;
+            minor) version="$major.$((minor + 1)).0" ;;
+            patch) version="$major.$minor.$((patch + 1))" ;;
+            *) echo "::error::Unknown level $LEVEL"; exit 1 ;;
+          esac
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            tag -a "$version" "$target" -m "FriendlyReminders $version"
+          git push origin "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "### FriendlyReminders $version ($LEVEL), $(git log -1 --format='%h %s' "$target")" >> "$GITHUB_STEP_SUMMARY"
+
+  # A tag pushed with GITHUB_TOKEN starts no workflows, so the build is called here instead of waiting for the tag push.
+  build:
+    needs: tag
+    uses: ./.github/workflows/build.yml
+    with:
+      tag: ${{ needs.tag.outputs.version }}
+    permissions:
+      contents: write

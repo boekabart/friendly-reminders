@@ -12,18 +12,32 @@ The popups are always on top, but never take focus: they don't interrupt your ty
 
 ## Install
 
-Requires the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) (x64).
+Download `HTI.FriendlyReminders-win-Setup.exe` from the [latest release](https://github.com/boekabart/meeting-alarm/releases/latest)
+and run it. It installs for you only (`%LOCALAPPDATA%\HTI.FriendlyReminders`, no admin rights, nothing else to
+install), adds a Start menu shortcut and starts the app. Uninstall via Windows' *Installed apps*; your settings stay.
 
-```powershell
-dotnet publish src/MeetingAlarm -c Release -o C:\Tools\FriendlyReminders
-C:\Tools\FriendlyReminders\FriendlyReminders.exe
-```
+**Updates** come by themselves: the app checks the releases every 6 hours, downloads a new version in the background
+and installs it the next time it starts. *Restart to update to …* in the tray menu does it right away.
+
+Coming from a hand-copied `FriendlyReminders.exe`: exit that one first. The installed app moves *Start with Windows*
+over to itself.
 
 On the first start it creates a settings file, offers to start with Windows (also in the tray menu: *Start with
 Windows*) and opens the file in Notepad. Fill in your tenants and/or ICS calendars and save: changes are picked up
 immediately, no restart needed.
 
 Development: `dotnet run --project src/MeetingAlarm` (add `-- --test` for a test popup right away), `dotnet test`.
+A dev build or a copy outside the installation never updates itself.
+
+## Releases
+
+The version is `git describe` of the nearest `X.Y.Z` tag: `0.9.0` on the tag, `0.9.0-3-gabc1234` three commits later.
+It's shown in the tray menu and tooltip.
+
+To release, press **Release: patch**, **Release: minor** or **Release: major** in the repo's Actions tab. That tags
+the tip of `main` (or a commit you give) with the next version, and `build.yml` builds the installer and publishes it as
+a GitHub release; installed copies pick it up from there. Tagging by hand does the same:
+`git tag -a 1.2.3 -m "FriendlyReminders 1.2.3"` and `git push origin 1.2.3`. Only `X.Y.Z` tags are built.
 
 ## Where things are stored: three tiers
 
@@ -135,7 +149,8 @@ forgettable. This is stored per PC in `%LOCALAPPDATA%\FriendlyReminders\screens.
   turns the tray icon into a warning. You only get a notification after 10 minutes of failing, and only when you're
   actually online (behind a Wi-Fi sign-in page counts as offline).
 * **Upcoming meetings…**, **Refresh now**, **Show test popup**, **Show chat popup**, **Screen setups**,
-  **Start with Windows**, **Open settings**, **Exit**.
+  **Start with Windows**, **Open settings**, the version, **Restart to update to …** (when an update is ready),
+  **Exit**.
 
 ## More
 

@@ -1,0 +1,18 @@
+<Project>
+  <!-- Version from the nearest tag: on 0.1.0 -> 0.1.0, 14 commits later -> 0.1.0-14-gabc1234 (no tags: the sha).
+       Shown in the tray menu (Updater.Version). CI needs the tags (fetch-depth: 0). -->
+  <PropertyGroup>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+  <Target Name="GitVersion" BeforeTargets="GetAssemblyVersion;GenerateAssemblyInfo">
+    <Exec Command="git describe --tags --always --match &quot;[0-9]*&quot;" WorkingDirectory="$(MSBuildThisFileDirectory)"
+          ConsoleToMSBuild="true" IgnoreExitCode="true" StandardOutputImportance="low" StandardErrorImportance="low">
+      <Output TaskParameter="ConsoleOutput" PropertyName="GitDescribe" />
+      <Output TaskParameter="ExitCode" PropertyName="GitExit" />
+    </Exec>
+    <PropertyGroup>
+      <InformationalVersion Condition="'$(GitExit)' == '0'">$(GitDescribe)</InformationalVersion>
+      <InformationalVersion Condition="'$(GitExit)' != '0'">0.0.0-dev</InformationalVersion>
+    </PropertyGroup>
+  </Target>
+</Project>

@@ -1,0 +1,23 @@
+name: "Release: minor"
+
+# New features, nothing broken: 0.9.0 becomes 0.10.0.
+# Tags main (or the commit given) and builds the installer as a GitHub release.
+# The work is in release.yml; this is the button.
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: Commit to release. Leave empty for the tip of main.
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  release:
+    uses: ./.github/workflows/release.yml
+    with:
+      level: minor
+      commit: ${{ inputs.commit }}
+    permissions:
+      contents: write
