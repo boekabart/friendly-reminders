@@ -17,7 +17,6 @@ sealed class MeetingPopup : PopupBase
     readonly Label timeLabel;
     readonly WinTimer tick = new() { Interval = 1000 };
     bool flashOn;
-    bool hushed;   // held back by a hush, shows up when it ends
 
     public MeetingPopup(Meeting meeting, Config cfg)
     {
@@ -59,10 +58,11 @@ sealed class MeetingPopup : PopupBase
                 Process.Start(new ProcessStartInfo(meeting.Link) { UseShellExecute = true });
                 Close();
             }));
-        buttons.Controls.Add(MakeButton(T.Later, Snooze));
+        buttons.Controls.Add(MakeButton(T.Later, Later));
         buttons.Controls.Add(MakeButton(T.CloseButton, Close));
-        buttons.Controls.Add(MakeHushButton(Hush.Meetings));
-        buttons.Controls.Add(MakeMenuButton("⋯", () => [new ToolStripMenuItem(F(T.IgnoreTitle, meeting.Title.Replace("&", "&&")), null, (_, _) => IgnoreTitle())]));
+        buttons.Controls.Add(MakeQuietButton(Quiet.MeetingsMuted));
+        buttons.Controls.Add(MakeMenuButton("⋯", () => [.. MoveItems(PopupKind.Meetings), new ToolStripSeparator(),
+            new ToolStripMenuItem(F(T.IgnoreTitle, meeting.Title.Replace("&", "&&")), null, (_, _) => IgnoreTitle())]));
         inner.Controls.Add(buttons);
 
         Controls.Add(inner);
@@ -76,16 +76,14 @@ sealed class MeetingPopup : PopupBase
         Appear();
     }
 
-    /// <summary>Show (again), unless hushed: then it waits for the hush to end.</summary>
+    /// <summary>Show (again). Muted: silently.</summary>
     void Appear()
     {
         if (Expired) { Close(); return; }
-        if (Hush.Meetings.Active) { hushed = true; return; }
-        hushed = false;
         Open.Add(this);
         Reposition();
         Show();
-        PlaySound();
+        if (!Quiet.MeetingsMuted.Active) PlaySound();
         UpdateCountdown();
         tick.Start();
     }
@@ -98,14 +96,6 @@ sealed class MeetingPopup : PopupBase
         Reposition();
     }
 
-    /// <summary>Hush started: every popup goes away. Hush ended: they all come back right away.</summary>
-    public static void HushChanged()
-    {
-        foreach (var p in Application.OpenForms.OfType<MeetingPopup>().ToList())
-            if (Hush.Meetings.Active && p.Visible) { p.Disappear(); p.hushed = true; }
-            else if (!Hush.Meetings.Active && p.hushed) p.Appear();
-    }
-
     bool Expired => cfg.Meetings.AutoCloseAfterMinutes > 0 &&
                     (DateTime.Now - meeting.Start).TotalMinutes >= cfg.Meetings.AutoCloseAfterMinutes;
 
@@ -116,7 +106,7 @@ sealed class MeetingPopup : PopupBase
 
     public static void Reposition()
     {
-        var points = Placement.Compute(Position, Placement.WorkingArea(DisplayNumber), Open.Select(p => p.Size).ToList());
+        var points = Placement.Compute(Position, ScreenMemory.WorkingArea(PopupKind.Meetings, DisplayNumber), Open.Select(p => p.Size).ToList());
         for (int i = 0; i < Open.Count; i++)
             Open[i].Location = points[i];
     }
@@ -137,7 +127,7 @@ sealed class MeetingPopup : PopupBase
             timeLabel.Text = min == 0 ? T.StartedNow : F(T.StartedAgo, min);
             flash = true;
         }
-        flashOn = flash && !flashOn;
+        flashOn = flash && !flashOn && !Quiet.MeetingsMuted.Active;   // muted: calm, no flashing
         inner.BackColor = flashOn ? FlashColor : color;
         KeepOnTop();
     }
@@ -155,7 +145,8 @@ sealed class MeetingPopup : PopupBase
             if (string.Equals(p.meeting.Title.Trim(), meeting.Title.Trim(), StringComparison.OrdinalIgnoreCase)) p.Close();
     }
 
-    void Snooze()
+    /// <summary>"Later": away for SnoozeSeconds, then back.</summary>
+    void Later()
     {
         Disappear();
         var wait = new WinTimer { Interval = Math.Max(5, cfg.Meetings.SnoozeSeconds) * 1000 };

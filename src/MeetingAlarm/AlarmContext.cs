@@ -7,7 +7,8 @@ sealed class AlarmContext : ApplicationContext
 {
     Config cfg;
     readonly ContextMenuStrip menu = new();
-    readonly ToolStripMenuItem miUpcoming, miRefresh, miTestPopup, miChatPopup, miAutostart, miSettings, miExit, miMeetingsHushed, miChatsHushed;
+    readonly ToolStripMenuItem miUpcoming, miRefresh, miTestPopup, miChatPopup, miAutostart, miSettings, miExit, miScreenSetups;
+    readonly Dictionary<Quiet, ToolStripMenuItem> quietItems;
     readonly NotifyIcon tray;
     readonly WinTimer checkTimer;
     readonly WinTimer reloadTimer = new() { Interval = 500 };   // debounce: editors often write several times
@@ -46,10 +47,12 @@ sealed class AlarmContext : ApplicationContext
         miAutostart.CheckedChanged += (_, _) => Autostart.Enabled = miAutostart.Checked;
         miSettings = new ToolStripMenuItem("", null, (_, _) => Config.OpenInNotepad());
         miExit = new ToolStripMenuItem("", null, (_, _) => ExitThread());
-        miMeetingsHushed = new ToolStripMenuItem("", null, (_, _) => Hush.Meetings.Resume()) { Visible = false };
-        miChatsHushed = new ToolStripMenuItem("", null, (_, _) => Hush.Chats.Resume()) { Visible = false };
-        menu.Items.AddRange([new ToolStripSeparator(), miMeetingsHushed, miChatsHushed, miUpcoming, miRefresh, miTestPopup, miChatPopup, miAutostart, miSettings,
-            new ToolStripSeparator(), miExit]);
+        miScreenSetups = new ToolStripMenuItem("");
+        miScreenSetups.DropDownItems.Add("…");   // so it shows as a submenu; filled when it opens
+        miScreenSetups.DropDownOpening += (_, _) => BuildScreenSetups();
+        quietItems = Quiet.All.ToDictionary(q => q, q => new ToolStripMenuItem("", null, (_, _) => q.Resume()) { Visible = false });
+        menu.Items.AddRange([new ToolStripSeparator(), .. quietItems.Values, miUpcoming, miRefresh, miTestPopup, miChatPopup, miScreenSetups,
+            miAutostart, miSettings, new ToolStripSeparator(), miExit]);
 
         tray = new NotifyIcon
         {
@@ -67,18 +70,22 @@ sealed class AlarmContext : ApplicationContext
         };
 
         chatPopup.Seen += Seen;
-        Hush.CurrentMeetings = () => Meetings
+        Quiet.CurrentMeetings = () => Meetings
             .Where(m => m.Start <= DateTime.Now.AddMinutes(cfg.Meetings.MinutesBefore) && m.End > DateTime.Now);
-        Hush.Meetings.Changed += () =>
+        foreach (var q in Quiet.All)
+            q.Changed += () =>
+            {
+                var item = quietItems[q];
+                item.Visible = q.Active;
+                if (q.Active) item.Text = q.Description;
+                if (q != Quiet.MeetingsMuted) chatPopup.ShowRows(chatRows);   // meeting popups check every second themselves
+            };
+        ScreenMemory.Changed += () =>
         {
-            ShowHushed(miMeetingsHushed, Hush.Meetings, T.HushWhatMeetings);
-            MeetingPopup.HushChanged();
+            MeetingPopup.Reposition();
+            chatPopup.Reposition();
         };
-        Hush.Chats.Changed += () =>
-        {
-            ShowHushed(miChatsHushed, Hush.Chats, T.HushWhatChats);
-            chatPopup.ShowRows(chatRows);
-        };
+        ScreenMemory.Seen(ScreenSetup.Current);
         ApplyConfig();
 
         // FileSystemWatcher fires on a thread-pool thread; (re)start the debounce timer via the UI context.
@@ -129,6 +136,7 @@ sealed class AlarmContext : ApplicationContext
         miChatPopup.Text = T.MenuChatPopup;
         miAutostart.Text = T.MenuAutostart;
         miSettings.Text = F(T.MenuSettings, Config.OneDriveName ?? T.ThisPc);
+        miScreenSetups.Text = T.MenuScreenSetups;
         miExit.Text = T.MenuExit;
 
         MeetingPopup.Position = cfg.Meetings.Position;
@@ -471,14 +479,48 @@ sealed class AlarmContext : ApplicationContext
         chatPopup.ShowRows(chatRows);
     }
 
-    static void ShowHushed(ToolStripMenuItem item, Hush hush, string what)
+    // ------------------------------------------------------------ Screen setups
+
+    /// <summary>Tray "Screen setups ▸": the current one, then every remembered setup with its choices, each to forget.</summary>
+    void BuildScreenSetups()
     {
-        item.Visible = hush.Active;
-        if (hush.Active) item.Text = hush.Description(what);
+        static string Esc(string s) => s.Replace("&", "&&");
+        var items = miScreenSetups.DropDownItems;
+        foreach (var old in items.Cast<ToolStripItem>().ToList()) old.Dispose();
+        var now = ScreenSetup.Current;
+        items.Add(new ToolStripMenuItem(F(T.ScreenSetupNow, Esc(now.Name))) { Enabled = false });
+        items.Add(new ToolStripSeparator());
+        if (ScreenMemory.Setups.Count == 0)
+            items.Add(new ToolStripMenuItem(T.NothingRemembered) { Enabled = false });
+
+        foreach (var (key, s) in ScreenMemory.Setups.OrderByDescending(x => x.Key == now.Key).ThenByDescending(x => x.Value.LastSeen).ToList())
+        {
+            var setup = new ToolStripMenuItem((key == now.Key ? "● " : "") + F(T.SetupHeader, Esc(s.Name), s.LastSeen.LocalDateTime));
+            void Choice(string text, Action<SetupMemory> forget) =>
+                setup.DropDownItems.Add(new ToolStripMenuItem(F(T.Forget, Esc(text)), null, (_, _) => ScreenMemory.Forget(key, forget)));
+            if (s.Meetings.Monitor is not null)
+                Choice(F(T.SetupOn, T.WhatMeetings, s.Meetings.MonitorName), m => m.Meetings.Monitor = m.Meetings.MonitorName = null);
+            if (s.Meetings.Mute) Choice(T.MeetingsMuted, m => m.Meetings.Mute = false);
+            if (s.Chats.Monitor is not null)
+                Choice(F(T.SetupOn, T.WhatChats, s.Chats.MonitorName), m => m.Chats.Monitor = m.Chats.MonitorName = null);
+            if (s.Chats.Mute) Choice(T.ChatsMuted, m => m.Chats.Mute = false);
+            if (s.Chats.Snooze) Choice(T.ChatsSnoozed, m => m.Chats.Snooze = false);
+            setup.DropDownItems.Add(new ToolStripSeparator());
+            setup.DropDownItems.Add(new ToolStripMenuItem(T.ForgetSetup, null, (_, _) => ScreenMemory.Forget(key, null)));
+            items.Add(setup);
+        }
+
+        if (ScreenMemory.Setups.Count > 0)
+        {
+            items.Add(new ToolStripSeparator());
+            items.Add(new ToolStripMenuItem(T.ForgetAll, null, (_, _) => ScreenMemory.ForgetAll()));
+        }
     }
 
     void DisplaysChanged(object? sender, EventArgs e)
     {
+        ScreenSetup.Refresh();
+        ScreenMemory.Seen(ScreenSetup.Current);
         MeetingPopup.Reposition();
         chatPopup.Reposition();
     }

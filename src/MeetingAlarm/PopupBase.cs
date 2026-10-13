@@ -87,17 +87,36 @@ abstract class PopupBase : Form
         return b;
     }
 
-    /// <summary>"Hush ▾": a menu with how long to hold back this type of popup and its sound.</summary>
-    protected Button MakeHushButton(Hush hush) => MakeMenuButton(T.HushButton + " ▾", hush.MenuItems);
+    /// <summary>"Mute ▾" / "Snooze ▾": a menu with how long to keep this type of popup quiet.</summary>
+    protected Button MakeQuietButton(Quiet quiet) => MakeMenuButton(quiet.ButtonText + " ▾", quiet.MenuItems);
+
+    /// <summary>
+    /// "Move to …" for the ⋯ menu: the other screens of the current setup (one item for one other screen, a submenu for
+    /// more). Remembered for this setup and popup type.
+    /// </summary>
+    protected ToolStripItem[] MoveItems(PopupKind kind)
+    {
+        var setup = ScreenSetup.Current;
+        var here = Screen.FromControl(this).DeviceName;
+        var others = setup.Groups.Where(g => !string.Equals(g.GdiName, here, StringComparison.OrdinalIgnoreCase)).ToList();
+        ToolStripMenuItem Item(ScreenGroup g, string text) => new(text, null, (_, _) =>
+            ScreenMemory.Update(setup, kind, c => (c.Monitor, c.MonitorName) = (g.Monitors[0].Id, g.Name)));
+        return others.Count switch
+        {
+            0 => [new ToolStripMenuItem(T.NoOtherScreen) { Enabled = false }],
+            1 => [Item(others[0], F(T.MoveTo, others[0].Name.Replace("&", "&&")))],
+            _ => [new ToolStripMenuItem(T.MoveToScreen, null, others.Select(g => (ToolStripItem)Item(g, g.Name.Replace("&", "&&"))).ToArray())],
+        };
+    }
 
     /// <summary>A button that opens a menu below it; the items are made when it opens.</summary>
-    protected Button MakeMenuButton(string text, Func<ToolStripItem[]> items)
+    protected Button MakeMenuButton(string text, Func<IEnumerable<ToolStripItem>> items)
     {
         Button b = null!;
         b = MakeButton(text, () =>
         {
             var menu = new ContextMenuStrip();
-            menu.Items.AddRange(items());
+            menu.Items.AddRange(items().ToArray());
             menu.Closed += (_, _) => menu.BeginInvoke(menu.Dispose);   // after the clicked item's handler ran
             menu.Show(b, new Point(0, b.Height));
         });

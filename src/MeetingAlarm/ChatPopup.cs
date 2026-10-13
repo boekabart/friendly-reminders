@@ -13,6 +13,7 @@ sealed class ChatPopup : PopupBase
     Dictionary<string, int> previousCounts = new();
     string signature = "";
     int flashTicks;
+    bool flashPending;   // something new arrived while muted: flash once the mute ends
     Position position = Position.MiddleRight;
     int displayNumber;
 
@@ -57,12 +58,15 @@ sealed class ChatPopup : PopupBase
         };
     }
 
-    /// <summary>Show the current state. Flashes when a chat was added or a count went up.</summary>
+    /// <summary>
+    /// Show the current state. Flashes when a chat was added or a count went up; muted: not until the mute ends.
+    /// Snoozed: hidden.
+    /// </summary>
     public void ShowRows(IReadOnlyList<ChatRow> rows)
     {
-        if (Hush.Chats.Active)
+        if (Quiet.ChatsSnoozed.Active)
         {
-            Hide();   // previousCounts stays as it was: anything new while hushed flashes when the hush ends
+            Hide();   // previousCounts stays as it was: anything new while snoozed flashes when the snooze ends
             return;
         }
         bool more = rows.Any(r => !previousCounts.TryGetValue(r.Key, out var old) || r.Count > old);
@@ -79,6 +83,7 @@ sealed class ChatPopup : PopupBase
         if (rows.Count == 0)
         {
             Hide();
+            flashPending = false;
             return;
         }
         if (!Visible)
@@ -87,7 +92,12 @@ sealed class ChatPopup : PopupBase
             Show();
         }
         KeepOnTop();
-        if (more) Flash();
+        flashPending |= more;
+        if (flashPending && !Quiet.ChatsMuted.Active)
+        {
+            flashPending = false;
+            Flash();
+        }
     }
 
     void Flash()
@@ -110,7 +120,9 @@ sealed class ChatPopup : PopupBase
             inner.Controls.Add(MakeLabel(F(T.MoreChats, rows.Count - MaxRows), 9, width));
         var buttons = new FlowLayoutPanel { AutoSize = true, BackColor = Color.Transparent, Margin = Padding.Empty };
         buttons.Controls.Add(MakeButton(T.MarkAllSeen, () => Seen?.Invoke(rows)));
-        buttons.Controls.Add(MakeHushButton(Hush.Chats));
+        buttons.Controls.Add(MakeQuietButton(Quiet.ChatsMuted));
+        buttons.Controls.Add(MakeQuietButton(Quiet.ChatsSnoozed));
+        buttons.Controls.Add(MakeMenuButton("⋯", () => MoveItems(PopupKind.Chats)));
         inner.Controls.Add(buttons);
 
         ResumeLayout();
@@ -163,7 +175,7 @@ sealed class ChatPopup : PopupBase
         return row;
     }
 
-    public void Reposition() => Location = Placement.Compute(position, Placement.WorkingArea(displayNumber), [Size])[0];
+    public void Reposition() => Location = Placement.Compute(position, ScreenMemory.WorkingArea(PopupKind.Chats, displayNumber), [Size])[0];
 
     protected override void OnSizeChanged(EventArgs e)
     {

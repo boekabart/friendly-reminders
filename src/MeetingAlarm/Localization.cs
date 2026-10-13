@@ -58,16 +58,35 @@ sealed record Texts
     public required string MoreChats { get; init; }              // {0} count
     public required string MarkAllSeen { get; init; }
     public required string SeenTooltip { get; init; }
-    public required string HushButton { get; init; }
-    public required string HushCurrentMeeting { get; init; }
-    public required string HushUntilEnd { get; init; }             // {0} title, {1} end time
-    public required string HushMinutes { get; init; }              // {0} minutes
-    public required string HushHour { get; init; }
-    public required string HushScreens { get; init; }
-    public required string MenuHushedUntil { get; init; }          // {0} what, {1} time
-    public required string MenuHushedScreens { get; init; }        // {0} what
-    public required string HushWhatMeetings { get; init; }
-    public required string HushWhatChats { get; init; }
+    public required string MuteButton { get; init; }
+    public required string SnoozeButton { get; init; }
+    public required string QuietCurrentMeeting { get; init; }
+    public required string QuietUntilEnd { get; init; }                           // {0} title, {1} end time
+    public required string QuietMinutes { get; init; }                            // {0} minutes
+    public required string QuietHour { get; init; }
+    public required string QuietWhileScreens { get; init; }
+    public required string QuietAlwaysSetup { get; init; }
+    public required string MeetingsMuted { get; init; }
+    public required string ChatsMuted { get; init; }
+    public required string ChatsSnoozed { get; init; }
+    public required string QuietUntil { get; init; }                              // {0} what, {1} time
+    public required string QuietWhile { get; init; }                              // {0} what
+    public required string QuietRemembered { get; init; }                         // {0} what
+    public required string MoveTo { get; init; }                                  // {0} screen
+    public required string MoveToScreen { get; init; }
+    public required string NoOtherScreen { get; init; }
+    public required string BuiltInDisplay { get; init; }
+    public required string PrimaryName { get; init; }                             // {0} screen
+    public required string MenuScreenSetups { get; init; }
+    public required string ScreenSetupNow { get; init; }                          // {0} setup
+    public required string NothingRemembered { get; init; }
+    public required string SetupHeader { get; init; }                             // {0} setup, {1} last seen
+    public required string SetupOn { get; init; }                                 // {0} what, {1} screen
+    public required string WhatMeetings { get; init; }
+    public required string WhatChats { get; init; }
+    public required string Forget { get; init; }                                  // {0} choice
+    public required string ForgetSetup { get; init; }
+    public required string ForgetAll { get; init; }
     public required string IgnoreTitle { get; init; }              // {0} title
 
     // Startup
@@ -130,16 +149,35 @@ static class Loc
         MoreChats = "+ {0} more chats",
         MarkAllSeen = "Mark all as seen",
         SeenTooltip = "Seen (until new messages arrive)",
-        HushButton = "Hush",
-        HushCurrentMeeting = "Current meeting",
-        HushUntilEnd = "{0} (until {1:t})",
-        HushMinutes = "{0} minutes",
-        HushHour = "1 hour",
-        HushScreens = "While connected to these screens",
-        MenuHushedUntil = "{0} hushed until {1:t} — click to resume",
-        MenuHushedScreens = "{0} hushed while on these screens — click to resume",
-        HushWhatMeetings = "Meetings",
-        HushWhatChats = "Teams chats",
+        MuteButton = "Mute",
+        SnoozeButton = "Snooze",
+        QuietCurrentMeeting = "Current meeting",
+        QuietUntilEnd = "{0} (until {1:t})",
+        QuietMinutes = "{0} minutes",
+        QuietHour = "1 hour",
+        QuietWhileScreens = "While connected to these screens",
+        QuietAlwaysSetup = "Always in this screen setup",
+        MeetingsMuted = "Meetings muted",
+        ChatsMuted = "Chats muted",
+        ChatsSnoozed = "Chats snoozed",
+        QuietUntil = "{0} until {1:t} — click to resume",
+        QuietWhile = "{0} while on these screens — click to resume",
+        QuietRemembered = "{0} in this screen setup — click to forget",
+        MoveTo = "Move to {0}",
+        MoveToScreen = "Move to screen",
+        NoOtherScreen = "No other screen",
+        BuiltInDisplay = "Built-in display",
+        PrimaryName = "{0} (primary)",
+        MenuScreenSetups = "Screen setups",
+        ScreenSetupNow = "Now: {0}",
+        NothingRemembered = "Nothing remembered yet",
+        SetupHeader = "{0} — last seen {1:g}",
+        SetupOn = "{0} on {1}",
+        WhatMeetings = "Meetings",
+        WhatChats = "Chats",
+        Forget = "Forget: {0}",
+        ForgetSetup = "Forget this setup",
+        ForgetAll = "Forget all",
         IgnoreTitle = "Ignore all meetings named “{0}”",
         AlreadyRunning = "Meeting Alarm is already running (see the system tray).",
         AutostartQuestion = "Start Meeting Alarm automatically with Windows?",
@@ -205,16 +243,35 @@ static class Loc
         MoreChats = "+ {0} andere chats",
         MarkAllSeen = "Alles gezien",
         SeenTooltip = "Gezien (tot er nieuwe berichten komen)",
-        HushButton = "Stil",
-        HushCurrentMeeting = "Huidige vergadering",
-        HushUntilEnd = "{0} (tot {1:t})",
-        HushMinutes = "{0} minuten",
-        HushHour = "1 uur",
-        HushScreens = "Zolang deze schermen aangesloten zijn",
-        MenuHushedUntil = "{0} stil tot {1:t} — klik om te hervatten",
-        MenuHushedScreens = "{0} stil zolang deze schermen aangesloten zijn — klik om te hervatten",
-        HushWhatMeetings = "Vergaderingen",
-        HushWhatChats = "Teams-chats",
+        MuteButton = "Dempen",
+        SnoozeButton = "Sluimeren",
+        QuietCurrentMeeting = "Huidige vergadering",
+        QuietUntilEnd = "{0} (tot {1:t})",
+        QuietMinutes = "{0} minuten",
+        QuietHour = "1 uur",
+        QuietWhileScreens = "Zolang deze schermen aangesloten zijn",
+        QuietAlwaysSetup = "Altijd in deze schermopstelling",
+        MeetingsMuted = "Vergaderingen gedempt",
+        ChatsMuted = "Chats gedempt",
+        ChatsSnoozed = "Chats sluimeren",
+        QuietUntil = "{0} tot {1:t} — klik om te hervatten",
+        QuietWhile = "{0} zolang deze schermen aangesloten zijn — klik om te hervatten",
+        QuietRemembered = "{0} in deze schermopstelling — klik om te vergeten",
+        MoveTo = "Verplaatsen naar {0}",
+        MoveToScreen = "Verplaatsen naar scherm",
+        NoOtherScreen = "Geen ander scherm",
+        BuiltInDisplay = "Ingebouwd scherm",
+        PrimaryName = "{0} (primair)",
+        MenuScreenSetups = "Schermopstellingen",
+        ScreenSetupNow = "Nu: {0}",
+        NothingRemembered = "Nog niets onthouden",
+        SetupHeader = "{0} — laatst gezien {1:g}",
+        SetupOn = "{0} op {1}",
+        WhatMeetings = "Vergaderingen",
+        WhatChats = "Chats",
+        Forget = "Vergeten: {0}",
+        ForgetSetup = "Deze opstelling vergeten",
+        ForgetAll = "Alles vergeten",
         IgnoreTitle = "Alle vergaderingen met de naam “{0}” negeren",
         AlreadyRunning = "Meeting Alarm draait al (zie systeemvak).",
         AutostartQuestion = "Meeting Alarm automatisch starten met Windows?",
@@ -272,16 +329,35 @@ static class Loc
         MoreChats = "+ {0} chattar till",
         MarkAllSeen = "Markera alla som sedda",
         SeenTooltip = "Sedd (tills nya meddelanden kommer)",
-        HushButton = "Tyst",
-        HushCurrentMeeting = "Pågående möte",
-        HushUntilEnd = "{0} (till {1:t})",
-        HushMinutes = "{0} minuter",
-        HushHour = "1 timme",
-        HushScreens = "Så länge de här skärmarna är anslutna",
-        MenuHushedUntil = "{0} tysta till {1:t} — klicka för att återuppta",
-        MenuHushedScreens = "{0} tysta så länge de här skärmarna är anslutna — klicka för att återuppta",
-        HushWhatMeetings = "Möten",
-        HushWhatChats = "Teams-chattar",
+        MuteButton = "Tysta",
+        SnoozeButton = "Snooza",
+        QuietCurrentMeeting = "Pågående möte",
+        QuietUntilEnd = "{0} (till {1:t})",
+        QuietMinutes = "{0} minuter",
+        QuietHour = "1 timme",
+        QuietWhileScreens = "Så länge de här skärmarna är anslutna",
+        QuietAlwaysSetup = "Alltid i den här skärmuppsättningen",
+        MeetingsMuted = "Möten tystade",
+        ChatsMuted = "Chattar tystade",
+        ChatsSnoozed = "Chattar snoozade",
+        QuietUntil = "{0} till {1:t} — klicka för att återuppta",
+        QuietWhile = "{0} så länge de här skärmarna är anslutna — klicka för att återuppta",
+        QuietRemembered = "{0} i den här skärmuppsättningen — klicka för att glömma",
+        MoveTo = "Flytta till {0}",
+        MoveToScreen = "Flytta till skärm",
+        NoOtherScreen = "Ingen annan skärm",
+        BuiltInDisplay = "Inbyggd skärm",
+        PrimaryName = "{0} (primär)",
+        MenuScreenSetups = "Skärmuppsättningar",
+        ScreenSetupNow = "Nu: {0}",
+        NothingRemembered = "Inget sparat än",
+        SetupHeader = "{0} — senast sedd {1:g}",
+        SetupOn = "{0} på {1}",
+        WhatMeetings = "Möten",
+        WhatChats = "Chattar",
+        Forget = "Glöm: {0}",
+        ForgetSetup = "Glöm den här uppsättningen",
+        ForgetAll = "Glöm alla",
         IgnoreTitle = "Ignorera alla möten med namnet ”{0}”",
         AlreadyRunning = "Meeting Alarm körs redan (se meddelandefältet).",
         AutostartQuestion = "Starta Meeting Alarm automatiskt med Windows?",
