@@ -1,16 +1,6 @@
-using System.Text.RegularExpressions;
-
 static class Placement
 {
     public const int Margin = 10;
-
-    /// <summary>Working area (excluding the taskbar) of Windows display <paramref name="number"/>; 0 or not present = main screen.</summary>
-    public static Rectangle WorkingArea(int number) =>
-        (Screen.AllScreens.FirstOrDefault(s => number > 0 && DisplayNumber(s.DeviceName) == number) ?? Screen.PrimaryScreen!).WorkingArea;
-
-    /// <summary>"\\.\DISPLAY2" → 2: the same number as Settings → Display → Identify.</summary>
-    public static int? DisplayNumber(string deviceName) =>
-        Regex.Match(deviceName, @"DISPLAY(\d+)$", RegexOptions.IgnoreCase) is { Success: true } m ? int.Parse(m.Groups[1].Value) : null;
 
     /// <summary>
     /// Positions for a stack of windows inside the working area. Index 0 is closest to the anchor edge;

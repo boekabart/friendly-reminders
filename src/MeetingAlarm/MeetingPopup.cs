@@ -8,7 +8,6 @@ sealed class MeetingPopup : PopupBase
 
     /// <summary>Anchor for the stack of meeting popups; call <see cref="Reposition"/> after changing it.</summary>
     public static Position Position { get; set; } = Position.BottomRight;
-    public static int DisplayNumber { get; set; }
 
     readonly Meeting meeting;
     readonly Config cfg;
@@ -106,7 +105,7 @@ sealed class MeetingPopup : PopupBase
 
     public static void Reposition()
     {
-        var points = Placement.Compute(Position, ScreenMemory.WorkingArea(PopupKind.Meetings, DisplayNumber), Open.Select(p => p.Size).ToList());
+        var points = Placement.Compute(Position, ScreenMemory.WorkingArea(PopupKind.Meetings), Open.Select(p => p.Size).ToList());
         for (int i = 0; i < Open.Count; i++)
             Open[i].Location = points[i];
     }

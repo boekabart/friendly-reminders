@@ -15,7 +15,6 @@ sealed class ChatPopup : PopupBase
     int flashTicks;
     bool flashPending;   // something new arrived while muted: flash once the mute ends
     Position position = Position.MiddleRight;
-    int displayNumber;
 
     /// <summary>The user has seen these rows (✓ or "Mark all as seen").</summary>
     public event Action<IReadOnlyList<ChatRow>>? Seen;
@@ -27,12 +26,6 @@ sealed class ChatPopup : PopupBase
     {
         get => position;
         set { position = value; Reposition(); }
-    }
-
-    public int DisplayNumber
-    {
-        get => displayNumber;
-        set { displayNumber = value; Reposition(); }
     }
 
     public ChatPopup()
@@ -175,7 +168,7 @@ sealed class ChatPopup : PopupBase
         return row;
     }
 
-    public void Reposition() => Location = Placement.Compute(position, ScreenMemory.WorkingArea(PopupKind.Chats, displayNumber), [Size])[0];
+    public void Reposition() => Location = Placement.Compute(position, ScreenMemory.WorkingArea(PopupKind.Chats), [Size])[0];
 
     protected override void OnSizeChanged(EventArgs e)
     {

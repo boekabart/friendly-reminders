@@ -72,14 +72,6 @@ public class PlacementTests
 
         Assert.Equal([new Point(10, 10), new Point(10, 120)], p);
     }
-
-    [Theory]
-    [InlineData(@"\\.\DISPLAY1", 1)]
-    [InlineData(@"\\.\DISPLAY12", 12)]
-    [InlineData(@"\\.\display3", 3)]
-    [InlineData("something else", null)]
-    public void DisplayNumber_from_DeviceName(string deviceName, int? expected) =>
-        Assert.Equal(expected, Placement.DisplayNumber(deviceName));
 }
 
 public class WinFormsTests

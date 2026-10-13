@@ -140,10 +140,8 @@ sealed class AlarmContext : ApplicationContext
         miExit.Text = T.MenuExit;
 
         MeetingPopup.Position = cfg.Meetings.Position;
-        MeetingPopup.DisplayNumber = cfg.Meetings.Screen;
         MeetingPopup.Reposition();
         chatPopup.Position = cfg.Chats.Position;
-        chatPopup.DisplayNumber = cfg.Chats.Screen;
         chatPopup.FlashSeconds = cfg.Chats.FlashSeconds;
         chatPopup.Sound = cfg.Sound;
 

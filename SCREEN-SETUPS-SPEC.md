@@ -34,7 +34,7 @@ The app doesn't guess which screen is best. It only remembers what the user told
 | Mute + snooze together | Possible (e.g. chats always muted at the desk setup, snoozed for 30 min). Snoozed wins while it lasts; afterwards the mute still applies. |
 | Undo | Tray menu: **all remembered setups**, each with its choices, and a way to forget each one (see §6). |
 | Storage | Local only: `%LOCALAPPDATA%\MeetingAlarm\screens.json`. Not in config.json, so not in OneDrive. |
-| Unknown setup | Falls back to `Meetings.Screen` / `Chats.Screen` from config.json, as today. |
+| Unknown setup | The main (primary) screen. The old `Screen` setting (a display number) in config.json was removed; an existing one is dropped from the file. |
 
 ## 3. Identifying monitors (the hard part)
 
@@ -78,7 +78,7 @@ For each popup type (meetings, chats) at the moment it is placed:
 
 1. If the current setup has a remembered screen for this type and that monitor is active → use it. When it is
    part of a mirror group, use that group.
-2. Otherwise → `Screen` from config.json, as today. That's a display number, falling back to the main screen.
+2. Otherwise → the main (primary) screen.
 
 `Position` from config.json is applied within the chosen screen, as today.
 

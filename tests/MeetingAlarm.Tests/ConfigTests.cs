@@ -23,6 +23,7 @@ public class ConfigTests
         Assert.Contains("\"Sound\": false", rewritten);
         Assert.Contains("\"GraphRefreshSeconds\": 30", rewritten);   // wasn't in the file
         Assert.Contains("\"Calendar\": false", rewritten);           // new per-tenant switch shows up
+        Assert.DoesNotContain("Screen", rewritten);                   // replaced by screen setups: dropped
     }
 
     [Fact]

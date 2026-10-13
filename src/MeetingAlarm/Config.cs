@@ -33,9 +33,8 @@ sealed class TenantConfig
 
 sealed class MeetingsConfig
 {
+    /// <summary>Where on the screen. Which screen: the main one, or per screen setup via "Move to …" (<see cref="ScreenMemory"/>).</summary>
     public Position Position { get; set; } = Position.BottomRight;
-    /// <summary>0 = main screen; n = Windows display number n (Settings → Display → Identify), falling back to the main screen.</summary>
-    public int Screen { get; set; }
     public int MinutesBefore { get; set; } = 5;
     public int SnoozeSeconds { get; set; } = 60;
     /// <summary>Minutes after the start at which the popup closes itself; 0 = never.</summary>
@@ -52,9 +51,8 @@ sealed class MeetingsConfig
 
 sealed class ChatsConfig
 {
+    /// <summary>See <see cref="MeetingsConfig.Position"/>.</summary>
     public Position Position { get; set; } = Position.MiddleRight;
-    /// <summary>See <see cref="MeetingsConfig.Screen"/>.</summary>
-    public int Screen { get; set; }
     public int PollSeconds { get; set; } = 30;
     public List<string> ChatTypes { get; set; } = ["oneOnOne", "group"];
     public int FlashSeconds { get; set; } = 3;
@@ -146,6 +144,10 @@ sealed class Config
     internal static (Config Config, string? Rewritten) Parse(string json)
     {
         var cfg = JsonSerializer.Deserialize<Config>(json, Options) ?? new Config();
+        // "Screen" (a display number) was replaced by per-screen-setup choices: drop it instead of keeping it as unknown.
+        foreach (var unknown in new[] { cfg.Meetings.Unknown, cfg.Chats.Unknown })
+            foreach (var key in unknown?.Keys.Where(k => k.Equals("Screen", StringComparison.OrdinalIgnoreCase)).ToList() ?? [])
+                unknown!.Remove(key);
         foreach (var p in cfg.Meetings.IgnoreTitles)
             try { TitleFilter.ToRegex(p); }
             catch (ArgumentException e) { throw new FormatException($"IgnoreTitles \"{p}\": {e.Message}"); }

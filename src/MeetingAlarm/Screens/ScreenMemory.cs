@@ -102,12 +102,12 @@ static class ScreenMemory
         Changed?.Invoke();
     }
 
-    /// <summary>Where popups of <paramref name="kind"/> go: the remembered screen if it's active, else config.json's display number.</summary>
-    public static Rectangle WorkingArea(PopupKind kind, int displayNumber)
+    /// <summary>Where popups of <paramref name="kind"/> go: the screen remembered for this setup if it's active, else the main screen.</summary>
+    public static Rectangle WorkingArea(PopupKind kind)
     {
         var setup = ScreenSetup.Current;
         var id = Choice(setup, kind)?.Monitor;
         var screen = setup.Groups.FirstOrDefault(g => g.Monitors.Any(m => m.Id == id))?.Screen;
-        return screen?.WorkingArea ?? Placement.WorkingArea(displayNumber);
+        return (screen ?? Screen.PrimaryScreen!).WorkingArea;
     }
 }
