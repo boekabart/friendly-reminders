@@ -20,6 +20,7 @@ static class Program
             MessageBox.Show(T.AlreadyRunning, "Meeting Alarm");
             return;
         }
+        AppFolders.MoveOldFolders();   // before anything reads or writes them; only here, with the single-instance lock held
         Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
