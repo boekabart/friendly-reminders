@@ -1,11 +1,12 @@
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
+using Microsoft.Win32;
 
 /// <summary>
 /// Flat, Windows 11-like look for menus: MenuRenderer.Use(menu); submenus follow along.
 /// No gradients or gray image strip, rounded hover highlight, more air, and rounded window corners from DWM.
+/// Light or dark like Windows' app mode, switching along live.
 /// </summary>
-// ponytail: light only; pick a dark color table from AppsUseLightTheme if dark mode is wanted.
 sealed class MenuRenderer() : ToolStripProfessionalRenderer(new Colors())
 {
     static readonly MenuRenderer Instance = new();
@@ -13,12 +14,22 @@ sealed class MenuRenderer() : ToolStripProfessionalRenderer(new Colors())
     /// <summary>Set per menu, not via ToolStripManager.Renderer: WinForms only calls Initialize for an explicitly set renderer.</summary>
     public static void Use(ToolStripDropDown menu) => menu.Renderer = Instance;
 
-    static readonly Color Back = Color.FromArgb(249, 249, 249);
-    static readonly Color Hover = Color.FromArgb(233, 233, 233);
-    static readonly Color Line = Color.FromArgb(224, 224, 224);
+    static bool dark = IsDark();
+
+    static MenuRenderer() =>
+        SystemEvents.UserPreferenceChanged += (_, e) => { if (e.Category == UserPreferenceCategory.General) dark = IsDark(); };
+
+    static bool IsDark() => Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize",
+        "AppsUseLightTheme", 1) is 0;
+
+    static Color Back => dark ? Color.FromArgb(44, 44, 44) : Color.FromArgb(249, 249, 249);
+    static Color Hover => dark ? Color.FromArgb(61, 61, 61) : Color.FromArgb(233, 233, 233);
+    static Color Line => dark ? Color.FromArgb(64, 64, 64) : Color.FromArgb(224, 224, 224);
+    static Color Fore => dark ? Color.White : Color.Black;
+    static Color Disabled => dark ? Color.FromArgb(120, 120, 120) : Color.FromArgb(109, 109, 109);
 
     [DllImport("dwmapi.dll")] static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
-    const int DWMWA_WINDOW_CORNER_PREFERENCE = 33, DWMWCP_ROUND = 2;
+    const int DWMWA_WINDOW_CORNER_PREFERENCE = 33, DWMWCP_ROUND = 2, DWMWA_BORDER_COLOR = 34;
 
     protected override void Initialize(ToolStrip toolStrip)
     {
@@ -26,9 +37,10 @@ sealed class MenuRenderer() : ToolStripProfessionalRenderer(new Colors())
         if (toolStrip is not ToolStripDropDown dropDown) return;
         foreach (ToolStripItem item in dropDown.Items) Pad(item);
         dropDown.ItemAdded += (_, e) => Pad(e.Item!);
-        // Windows 11 rounds the corners; Windows 10 doesn't know the attribute and ignores it.
-        if (dropDown.IsHandleCreated) Round(dropDown);
-        dropDown.HandleCreated += (_, _) => Round(dropDown);
+        // Windows 11 rounds the corners and draws the border; Windows 10 doesn't know the attributes and ignores them.
+        if (dropDown.IsHandleCreated) Frame(dropDown);
+        dropDown.HandleCreated += (_, _) => Frame(dropDown);
+        dropDown.Opened += (_, _) => Frame(dropDown);   // border color after a light/dark switch (the tray menu lives on)
     }
 
     static void Pad(ToolStripItem item)
@@ -40,10 +52,33 @@ sealed class MenuRenderer() : ToolStripProfessionalRenderer(new Colors())
         if (mi.HasDropDownItems) Use(mi.DropDown);
     }
 
-    static void Round(Control c)
+    static void Frame(Control c)
     {
-        int round = DWMWCP_ROUND;
+        int round = DWMWCP_ROUND, border = ColorTranslator.ToWin32(Line);
         DwmSetWindowAttribute(c.Handle, DWMWA_WINDOW_CORNER_PREFERENCE, ref round, sizeof(int));
+        DwmSetWindowAttribute(c.Handle, DWMWA_BORDER_COLOR, ref border, sizeof(int));
+    }
+
+    protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
+    {
+        if (e.Item.IsOnDropDown) e.TextColor = e.Item.Enabled ? Fore : Disabled;
+        base.OnRenderItemText(e);
+    }
+
+    protected override void OnRenderArrow(ToolStripArrowRenderEventArgs e)
+    {
+        if (e.Item?.IsOnDropDown == true) e.ArrowColor = e.Item.Enabled ? Fore : Disabled;
+        base.OnRenderArrow(e);
+    }
+
+    /// <summary>A drawn check instead of the stock black bitmap in a box, which disappears on dark.</summary>
+    protected override void OnRenderItemCheck(ToolStripItemImageRenderEventArgs e)
+    {
+        var r = e.ImageRectangle;
+        float x = r.X + r.Width / 2f, y = r.Y + r.Height / 2f, u = r.Height / 8f;
+        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+        using var pen = new Pen(e.Item.Enabled ? Fore : Disabled, Math.Max(1.5f, u * 0.75f));
+        e.Graphics.DrawLines(pen, [new PointF(x - 2.5f * u, y), new PointF(x - u, y + 1.5f * u), new PointF(x + 2.5f * u, y - 2 * u)]);
     }
 
     protected override void OnRenderMenuItemBackground(ToolStripItemRenderEventArgs e)
@@ -67,10 +102,5 @@ sealed class MenuRenderer() : ToolStripProfessionalRenderer(new Colors())
         public override Color MenuItemBorder => Color.Transparent;
         public override Color SeparatorDark => Line;
         public override Color SeparatorLight => Back;
-        // The box behind a checkmark: invisible, so only the check itself shows.
-        public override Color CheckBackground => Back;
-        public override Color CheckSelectedBackground => Hover;
-        public override Color CheckPressedBackground => Hover;
-        public override Color ButtonSelectedBorder => Color.Transparent;
     }
 }
