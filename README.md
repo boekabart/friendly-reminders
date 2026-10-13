@@ -139,5 +139,6 @@ forgettable. This is stored per PC in `%LOCALAPPDATA%\FriendlyReminders\screens.
 
 ## More
 
+* `ARCHITECTURE.md`: how the app is put together (for developers).
 * `TEAMS-ALARM-SPEC.md`: the design of the Teams chat part (Graph access, counting, ack semantics).
 * `SCREEN-SETUPS-SPEC.md`: the design of screen setups, Mute and Snooze.
