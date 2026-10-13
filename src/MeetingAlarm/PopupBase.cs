@@ -121,6 +121,7 @@ abstract class PopupBase : Form
         b = MakeButton(text, () =>
         {
             var menu = new ContextMenuStrip();
+            MenuRenderer.Use(menu);
             menu.Items.AddRange(items().ToArray());
             // The popup never takes focus, so Windows doesn't close the menu on a click elsewhere: watch for that
             // ourselves, and for the popup going away underneath it (e.g. the chat was read in Teams).

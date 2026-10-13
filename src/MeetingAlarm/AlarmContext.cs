@@ -53,6 +53,7 @@ sealed class AlarmContext : ApplicationContext
         quietItems = Quiet.All.ToDictionary(q => q, q => new ToolStripMenuItem("", null, (_, _) => q.Resume()) { Visible = false });
         menu.Items.AddRange([new ToolStripSeparator(), .. quietItems.Values, miUpcoming, miRefresh, miTestPopup, miChatPopup, miScreenSetups,
             miAutostart, miSettings, new ToolStripSeparator(), miExit]);
+        MenuRenderer.Use(menu);
 
         tray = new NotifyIcon
         {
