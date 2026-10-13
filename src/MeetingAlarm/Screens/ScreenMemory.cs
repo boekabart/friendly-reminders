@@ -25,13 +25,12 @@ sealed class SetupMemory
 }
 
 /// <summary>
-/// Per screen setup (<see cref="ScreenSetup.Key"/>) the remembered choices, in %LOCALAPPDATA%\MeetingAlarm\screens.json.
+/// Per screen setup (<see cref="ScreenSetup.Key"/>) the remembered choices, in %LOCALAPPDATA%\FriendlyReminders\screens.json.
 /// Local on purpose: a setup includes this PC's own panel, so it means nothing on another PC.
 /// </summary>
 static class ScreenMemory
 {
-    static string FilePath => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MeetingAlarm", "screens.json");
+    static string FilePath => Path.Combine(AppFolders.Local, "screens.json");
 
     static readonly JsonSerializerOptions Options = new()
     {

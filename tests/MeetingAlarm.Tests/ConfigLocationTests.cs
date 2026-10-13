@@ -63,3 +63,36 @@ public sealed class ConfigLocationTests : IDisposable
         Assert.True(Directory.Exists(Path.GetDirectoryName(path)));
     }
 }
+
+public sealed class AppFoldersTests : IDisposable
+{
+    readonly string root = Directory.CreateTempSubdirectory("appfolders").FullName;
+    string Old => Path.Combine(root, "MeetingAlarm");
+    string New => Path.Combine(root, "FriendlyReminders");
+
+    public void Dispose() => Directory.Delete(root, recursive: true);
+
+    [Fact]
+    public void Old_folder_moves_to_the_new_name_with_its_files()
+    {
+        Directory.CreateDirectory(Old);
+        File.WriteAllText(Path.Combine(Old, "chats.json"), "{}");
+
+        Assert.Equal(New, AppFolders.Migrate(Old, New));
+        Assert.True(File.Exists(Path.Combine(New, "chats.json")));
+        Assert.False(Directory.Exists(Old));
+    }
+
+    [Fact]
+    public void Existing_new_folder_wins_and_old_one_is_left_alone()
+    {
+        Directory.CreateDirectory(Old);
+        Directory.CreateDirectory(New);
+
+        Assert.Equal(New, AppFolders.Migrate(Old, New));
+        Assert.True(Directory.Exists(Old));
+    }
+
+    [Fact]
+    public void Fresh_install_uses_the_new_name() => Assert.Equal(New, AppFolders.Migrate(Old, New));
+}

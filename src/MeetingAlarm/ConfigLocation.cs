@@ -11,7 +11,7 @@ static class ConfigLocation
 {
     public const string FileName = "config.json";
 
-    public static string LocalDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MeetingAlarm");
+    public static string LocalDir => AppFolders.Roaming;
 
     /// <summary>OneDrive folders as the OneDrive app records them: personal first, then work accounts. Only ones that exist.</summary>
     public static List<string> OneDriveFolders()

@@ -3,8 +3,7 @@ using System.Text.Json;
 /// <summary>Per chat, the time of the last acked message. Persisted across restarts.</summary>
 sealed class ChatState
 {
-    static string FilePath => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MeetingAlarm", "chats.json");
+    static string FilePath => Path.Combine(AppFolders.Roaming, "chats.json");
 
     readonly Dictionary<string, DateTimeOffset> acks;
 

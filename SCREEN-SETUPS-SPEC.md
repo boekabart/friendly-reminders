@@ -33,7 +33,7 @@ The app doesn't guess which screen is best. It only remembers what the user told
 | Chats | **Mute or Snooze.** Muted: the popup keeps showing and updating, no sound or flash. Snoozed: hidden, as today's hush. When either ends and something new arrived meanwhile, the popup flashes (and beeps). |
 | Mute + snooze together | Possible (e.g. chats always muted at the desk setup, snoozed for 30 min). Snoozed wins while it lasts; afterwards the mute still applies. |
 | Undo | Tray menu: **all remembered setups**, each with its choices, and a way to forget each one (see §6). |
-| Storage | Local only: `%LOCALAPPDATA%\MeetingAlarm\screens.json`. Not in config.json, so not in OneDrive. |
+| Storage | Local only: `%LOCALAPPDATA%\FriendlyReminders\screens.json`. Not in config.json, so not in OneDrive. |
 | Unknown setup | The main (primary) screen. The old `Screen` setting (a display number) in config.json was removed; an existing one is dropped from the file. |
 
 ## 3. Identifying monitors (the hard part)
@@ -143,7 +143,7 @@ Clicking one ends it (for ③: forgets it for this setup).
 
 ## 7. Storage
 
-`%LOCALAPPDATA%\MeetingAlarm\screens.json`, written atomically (tmp + move, like chats.json):
+`%LOCALAPPDATA%\FriendlyReminders\screens.json`, written atomically (tmp + move, like chats.json):
 
 ```json
 {

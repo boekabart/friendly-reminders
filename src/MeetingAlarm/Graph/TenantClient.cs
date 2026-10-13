@@ -57,7 +57,7 @@ sealed class TenantClient
     {
         if (cacheAttached) return;
         cacheHelper ??= MsalCacheHelper.CreateAsync(new StorageCreationPropertiesBuilder("msal.cache",
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MeetingAlarm")).Build());
+            AppFolders.Local).Build());
         (await cacheHelper).RegisterCache(app.UserTokenCache);   // DPAPI-encrypted
         cacheAttached = true;
 
